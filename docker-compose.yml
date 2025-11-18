@@ -7,7 +7,7 @@ services:
         soft: 1048576
         hard: 1048576
     ports:
-      - 127.0.0.1:8545:8545
+      - 8545:8545
     volumes:
       - type: volume
         source: reth-data
@@ -26,7 +26,7 @@ services:
         soft: 1048576
         hard: 1048576
     ports:
-      - 127.0.0.1:5432:5432
+      - 5432:5432
     volumes:
       - type: volume
         source: postgres-data
