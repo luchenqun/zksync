@@ -1,0 +1,4 @@
+zksync-era
+reth/chaindata
+!reth/chaindata/
+!reth/chaindata/reth_config
