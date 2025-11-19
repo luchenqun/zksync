@@ -343,7 +343,6 @@ start_all() {
   start_explorer_backend
   sleep 3  # 等待后端服务启动
   start_explorer
-  start_observability
   log "========== 所有服务已启动 =========="
   status_all
 }
@@ -351,7 +350,6 @@ start_all() {
 # 停止所有服务
 stop_all() {
   log "========== 停止所有服务 =========="
-  stop_observability
   stop_explorer
   stop_explorer_backend
   stop_portal
