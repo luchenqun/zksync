@@ -1,13 +1,13 @@
 id: 2
-name: custom_zk_chain
+name: custom_zkchain
 chain_id: 272
 prover_version: NoProofs
 l1_network: Localhost
 link_to_code: /Users/lcq/Code/zk/zksync/zksync-era
-configs: /Users/lcq/Code/zk/zksync/chains/custom_zk_chain/configs/
-rocks_db_path: /Users/lcq/Code/zk/zksync/chains/custom_zk_chain/db/
+configs: /Users/lcq/Code/zk/zksync/chains/custom_zkchain/configs/
+rocks_db_path: /Users/lcq/Code/zk/zksync/chains/custom_zkchain/db/
 external_node_config_path: null
-artifacts_path: /Users/lcq/Code/zk/zksync/chains/custom_zk_chain/artifacts/
+artifacts_path: /Users/lcq/Code/zk/zksync/chains/custom_zkchain/artifacts/
 l1_batch_commit_data_generator_mode: Rollup
 base_token:
   address: 0xe510c4396d63a563f03f7d9ceeee667780df6e1a

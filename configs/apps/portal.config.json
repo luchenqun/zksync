@@ -40,9 +40,10 @@
     {
       "network": {
         "id": 272,
-        "key": "custom_zk_chain",
-        "name": "custom_zk_chain",
+        "key": "custom_zkchain",
+        "name": "custom_zkchain",
         "rpcUrl": "http://127.0.0.1:3150/",
+        "hidden": false,
         "l1Network": {
           "id": 9,
           "name": "Localhost",

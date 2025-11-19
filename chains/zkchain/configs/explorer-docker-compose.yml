@@ -6,12 +6,29 @@ services:
     - 3002:3002
     environment:
       PORT: '3002'
-      LOG_LEVEL: verbose
-      NODE_ENV: development
-      PRIVIDIUM: 'false'
       DATABASE_URL: postgres://postgres:notsecurepassword@host.docker.internal:5432/zksync_explorer_localhost_zkchain
+      LOG_LEVEL: verbose
+      PRIVIDIUM: 'false'
+      NODE_ENV: development
     depends_on:
     - worker
+    extra_hosts:
+    - host.docker.internal:host-gateway
+  worker:
+    image: matterlabs/block-explorer-worker:v2.73.1
+    platform: linux/amd64
+    environment:
+      DATABASE_NAME: zksync_explorer_localhost_zkchain
+      LOG_LEVEL: verbose
+      BLOCKCHAIN_RPC_URL: http://host.docker.internal:3050/
+      NODE_ENV: development
+      PORT: '3001'
+      BATCHES_PROCESSING_POLLING_INTERVAL: '1000'
+      DATA_FETCHER_URL: http://data-fetcher:3040
+      DATABASE_PORT: '5432'
+      DATABASE_PASSWORD: notsecurepassword
+      DATABASE_HOST: host.docker.internal
+      DATABASE_USER: postgres
     extra_hosts:
     - host.docker.internal:host-gateway
   data-fetcher:
@@ -20,27 +37,10 @@ services:
     ports:
     - 3040:3040
     environment:
+      LOG_LEVEL: verbose
+      NODE_ENV: development
+      BLOCKCHAIN_RPC_URL: http://host.docker.internal:3050/
       PORT: '3040'
-      LOG_LEVEL: verbose
-      NODE_ENV: development
-      BLOCKCHAIN_RPC_URL: http://host.docker.internal:3050/
-    extra_hosts:
-    - host.docker.internal:host-gateway
-  worker:
-    image: matterlabs/block-explorer-worker:v2.73.1
-    platform: linux/amd64
-    environment:
-      DATABASE_PASSWORD: notsecurepassword
-      BLOCKCHAIN_RPC_URL: http://host.docker.internal:3050/
-      DATABASE_NAME: zksync_explorer_localhost_zkchain
-      DATA_FETCHER_URL: http://data-fetcher:3040
-      PORT: '3001'
-      DATABASE_USER: postgres
-      NODE_ENV: development
-      BATCHES_PROCESSING_POLLING_INTERVAL: '1000'
-      LOG_LEVEL: verbose
-      DATABASE_HOST: host.docker.internal
-      DATABASE_PORT: '5432'
     extra_hosts:
     - host.docker.internal:host-gateway
 name: zkchain-explorer

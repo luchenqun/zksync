@@ -3,7 +3,7 @@ l1_network: Localhost
 link_to_code: /Users/lcq/Code/zk/zksync/zksync-era
 chains: /Users/lcq/Code/zk/zksync/chains
 config: /Users/lcq/Code/zk/zksync/./configs/
-default_chain: custom_zk_chain
+default_chain: custom_zkchain
 era_chain_id: 270
 prover_version: NoProofs
 wallet_creation: Localhost

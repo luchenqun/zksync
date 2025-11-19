@@ -1,0 +1,46 @@
+services:
+  worker:
+    image: matterlabs/block-explorer-worker:v2.73.1
+    platform: linux/amd64
+    environment:
+      DATABASE_NAME: zksync_explorer_localhost_custom_zk_chain
+      DATABASE_PORT: '5432'
+      DATABASE_PASSWORD: notsecurepassword
+      DATABASE_HOST: host.docker.internal
+      BLOCKCHAIN_RPC_URL: http://host.docker.internal:3150/
+      PORT: '3101'
+      DATA_FETCHER_URL: http://data-fetcher:3140
+      NODE_ENV: development
+      LOG_LEVEL: verbose
+      DATABASE_USER: postgres
+      BATCHES_PROCESSING_POLLING_INTERVAL: '1000'
+    extra_hosts:
+      - host.docker.internal:host-gateway
+  data-fetcher:
+    image: matterlabs/block-explorer-data-fetcher:v2.73.1
+    platform: linux/amd64
+    ports:
+      - 3140:3140
+    environment:
+      PORT: '3140'
+      NODE_ENV: development
+      BLOCKCHAIN_RPC_URL: http://host.docker.internal:3150/
+      LOG_LEVEL: verbose
+    extra_hosts:
+      - host.docker.internal:host-gateway
+  api:
+    image: matterlabs/block-explorer-api:v2.73.1
+    platform: linux/amd64
+    ports:
+      - 3102:3102
+    environment:
+      DATABASE_URL: postgres://postgres:notsecurepassword@host.docker.internal:5432/zksync_explorer_localhost_custom_zk_chain
+      PRIVIDIUM: 'false'
+      PORT: '3102'
+      LOG_LEVEL: verbose
+      NODE_ENV: development
+    depends_on:
+      - worker
+    extra_hosts:
+      - host.docker.internal:host-gateway
+name: custom_zkchain-explorer

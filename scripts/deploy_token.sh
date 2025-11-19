@@ -58,7 +58,7 @@ BALANCE=$(cast balance --erc20 "$TOKEN_ADDRESS" "$GOVERNOR_ADDRESS" --rpc-url ht
 log "Governor ($GOVERNOR_ADDRESS) balance: $BALANCE"
 
 # 更新 ZkStack.yaml
-CHAIN_NAME="${CHAIN_NAME:-custom_zk_chain}"
+CHAIN_NAME="${CHAIN_NAME:-custom_zkchain}"
 ZKSTACK_YAML="${PROJECT_ROOT}/chains/${CHAIN_NAME}/ZkStack.yaml"
 
 if [ -f "$ZKSTACK_YAML" ]; then

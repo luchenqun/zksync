@@ -17,17 +17,17 @@
         "prividium": false
       },
       {
-        "name": "custom_zk_chain",
-        "l2NetworkName": "custom_zk_chain",
+        "name": "custom_zkchain",
+        "l2NetworkName": "custom_zkchain",
         "l2ChainId": 272,
         "rpcUrl": "http://127.0.0.1:3150/",
-        "apiUrl": "http://127.0.0.1:3002",
-        "baseTokenAddress": "0xe510c4396d63a563f03f7d9ceeee667780df6e1a",
+        "apiUrl": "http://127.0.0.1:3102",
+        "baseTokenAddress": "0x000000000000000000000000000000000000800A",
         "hostnames": [],
         "icon": "/images/icons/zksync-arrows.svg",
         "maintenance": false,
         "published": true,
-        "verificationApiUrl": "http://127.0.0.1:3070",
+        "verificationApiUrl": "http://127.0.0.1:3170",
         "prividium": false
       }
     ]

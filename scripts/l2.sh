@@ -129,9 +129,9 @@ start_portal() {
 
   remove_portal_container
 
-  log "启动 Portal (zkstack portal)..."
+  log "启动 Portal (zkstack portal --chain $CHAIN_NAME)..."
   cd "$REPO_ROOT"
-  nohup zkstack portal > "$REPO_ROOT/logs/portal.log" 2>&1 &
+  nohup zkstack portal --chain "$CHAIN_NAME" > "$REPO_ROOT/logs/portal.log" 2>&1 &
   local pid=$!
   echo "$pid" > "$PORTAL_PID_FILE"
   log "Portal 已启动 (PID: $pid)"
@@ -299,9 +299,9 @@ start_explorer() {
   # 清理可能残留的容器
   remove_explorer_container
 
-  log "启动 Explorer 前端 (zkstack explorer run)..."
+  log "启动 Explorer 前端 (zkstack explorer run --chain $CHAIN_NAME)..."
   cd "$REPO_ROOT"
-  nohup zkstack explorer run > "$REPO_ROOT/logs/explorer.log" 2>&1 &
+  nohup zkstack explorer run --chain "$CHAIN_NAME" > "$REPO_ROOT/logs/explorer.log" 2>&1 &
   local pid=$!
   echo "$pid" > "$EXPLORER_PID_FILE"
   log "Explorer 前端已启动 (PID: $pid)"
@@ -431,9 +431,9 @@ show_usage() {
 
 服务说明:
   - L2 服务器: zkstack server --chain <chain_name>
-  - Portal: zkstack portal
+  - Portal: zkstack portal --chain <chain_name>
   - Explorer 后端: docker-compose (chains/<chain_name>/configs/explorer-docker-compose.yml)
-  - Explorer 前端: zkstack explorer run
+  - Explorer 前端: zkstack explorer run --chain <chain_name>
 
 当前链名称: $CHAIN_NAME
 
@@ -452,6 +452,7 @@ EOF
 
 # 解析参数（在设置默认值之后）
 CMD=""
+POSITIONAL=()
 while [[ $# -gt 0 ]]; do
   case $1 in
     --chain)
@@ -463,14 +464,26 @@ while [[ $# -gt 0 ]]; do
       EXPLORER_COMPOSE_FILE="$REPO_ROOT/chains/$CHAIN_NAME/configs/explorer-docker-compose.yml"
       shift 2
       ;;
-    *)
-      # 不是选项，作为命令处理
-      CMD="$1"
+    --help|-h)
+      CMD="help"
       shift
-      break
+      ;;
+    start|stop|restart|status|start-server|stop-server|start-portal|stop-portal|start-explorer-backend|stop-explorer-backend|start-explorer|stop-explorer|start-observability|stop-observability|clean)
+      if [[ -z "$CMD" ]]; then
+        CMD="$1"
+      else
+        POSITIONAL+=("$1")
+      fi
+      shift
+      ;;
+    *)
+      POSITIONAL+=("$1")
+      shift
       ;;
   esac
 done
+
+set -- "${POSITIONAL[@]}"
 
 # 如果没有命令，默认为 help
 CMD="${CMD:-help}"

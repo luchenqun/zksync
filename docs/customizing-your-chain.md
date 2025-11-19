@@ -236,7 +236,7 @@ This time, use the answers below:
 ┌   ZK Stack CLI
 │
 ◇  What do you want to name the chain?
-│  custom_zk_chain
+│  custom_zkchain
 │
 ◇  What's the chain id?
 │  272
@@ -300,7 +300,7 @@ zkstack server
 
 Your new chain should be running at port `3150`.
 You can confirm this by looking for a log in the server that says `Initialized HTTP API on 0.0.0.0:3150`,
-or by looking in your `my_elastic_network/chains/custom_zk_chain/configs/general.yaml` file at the `web3_json_rpc:http_port` value.
+or by looking in your `my_elastic_network/chains/custom_zkchain/configs/general.yaml` file at the `web3_json_rpc:http_port` value.
 
 ## Bridging the base token to your chain
 
@@ -433,8 +433,8 @@ To restart the docker containers for your ecosystem and run your custom ZKsync C
 
 1. In the ecosystem folder, run `zkstack containers`.
 1. Redeploy your ERC20 contract to the L1.
-1. Update the base token address in `<my_elastic_network>/chains/custom_zk_chain/configs/contracts.yaml` under `l1.base_token_addr` and in
-  `<my_elastic_network>/chains/custom_zk_chain/ZkStack.yaml` under `base_token.address`.
+1. Update the base token address in `<my_elastic_network>/chains/custom_zkchain/configs/contracts.yaml` under `l1.base_token_addr` and in
+  `<my_elastic_network>/chains/custom_zkchain/ZkStack.yaml` under `base_token.address`.
 1. Send ERC20 tokens to both of the ecosystem and chain governor addresses.
 1. Initialize the ecosystem with `zkstack ecosystem init --dev`.
 1. Start the chain server with `zkstack server`.

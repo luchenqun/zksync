@@ -20,7 +20,7 @@ warn() {
 }
 
 # ----------- 配置参数 -----------
-CHAIN_NAME="${CHAIN_NAME:-custom_zk_chain}"
+CHAIN_NAME="${CHAIN_NAME:-custom_zkchain}"
 CHAIN_ID="${CHAIN_ID:-272}"
 TOKEN_NAME="${TOKEN_NAME:-ZK Base Token}"
 TOKEN_SYMBOL="${TOKEN_SYMBOL:-ZKBT}"

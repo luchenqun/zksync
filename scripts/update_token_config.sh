@@ -19,7 +19,7 @@ if [ $# -lt 1 ]; then
 fi
 
 TOKEN_ADDRESS="$1"
-CHAIN_NAME="${CHAIN_NAME:-custom_zk_chain}"
+CHAIN_NAME="${CHAIN_NAME:-custom_zkchain}"
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 log "更新 token 配置..."

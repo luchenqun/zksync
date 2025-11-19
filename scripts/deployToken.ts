@@ -1,13 +1,13 @@
-import { execSync } from "child_process";
-import fs from "fs";
-import path from "path";
-import dotenv from "dotenv";
+import { execSync } from 'child_process';
+import fs from 'fs';
+import path from 'path';
+import dotenv from 'dotenv';
 
 dotenv.config();
 
-const PROJECT_ROOT = path.resolve(__dirname, "..");
-const ENV_FILE = path.join(PROJECT_ROOT, ".env");
-const DEPLOY_LOG = path.join(PROJECT_ROOT, "logs", "token-deploy.log");
+const PROJECT_ROOT = path.resolve(__dirname, '..');
+const ENV_FILE = path.join(PROJECT_ROOT, '.env');
+const DEPLOY_LOG = path.join(PROJECT_ROOT, 'logs', 'token-deploy.log');
 
 function log(message: string) {
   const timestamp = new Date().toLocaleTimeString();
@@ -20,20 +20,17 @@ function error(message: string) {
 }
 
 function updateEnvFile(tokenAddress: string) {
-  log("更新 .env 文件...");
+  log('更新 .env 文件...');
 
-  let envContent = "";
+  let envContent = '';
   if (fs.existsSync(ENV_FILE)) {
-    envContent = fs.readFileSync(ENV_FILE, "utf8");
+    envContent = fs.readFileSync(ENV_FILE, 'utf8');
   }
 
   // 检查是否已有 TOKEN_ADDRESS
-  if (envContent.includes("TOKEN_ADDRESS=")) {
+  if (envContent.includes('TOKEN_ADDRESS=')) {
     // 替换现有的
-    envContent = envContent.replace(
-      /TOKEN_ADDRESS=.*/,
-      `TOKEN_ADDRESS=${tokenAddress}`
-    );
+    envContent = envContent.replace(/TOKEN_ADDRESS=.*/, `TOKEN_ADDRESS=${tokenAddress}`);
   } else {
     // 添加新的
     envContent += `\nTOKEN_ADDRESS=${tokenAddress}\n`;
@@ -44,13 +41,8 @@ function updateEnvFile(tokenAddress: string) {
 }
 
 function updateZkStackYaml(tokenAddress: string) {
-  const chainName = process.env.CHAIN_NAME || "custom_zk_chain";
-  const zkStackYamlPath = path.join(
-    PROJECT_ROOT,
-    "chains",
-    chainName,
-    "ZkStack.yaml"
-  );
+  const chainName = process.env.CHAIN_NAME || 'custom_zkchain';
+  const zkStackYamlPath = path.join(PROJECT_ROOT, 'chains', chainName, 'ZkStack.yaml');
 
   if (!fs.existsSync(zkStackYamlPath)) {
     log(`⚠ 链配置文件不存在，跳过更新: ${zkStackYamlPath}`);
@@ -59,14 +51,11 @@ function updateZkStackYaml(tokenAddress: string) {
 
   log(`更新 ${chainName}/ZkStack.yaml...`);
 
-  let content = fs.readFileSync(zkStackYamlPath, "utf8");
+  let content = fs.readFileSync(zkStackYamlPath, 'utf8');
 
   // 更新 base_token.address
-  if (content.includes("base_token:")) {
-    content = content.replace(
-      /(base_token:\s*\n\s*address:\s*).*/,
-      `$1${tokenAddress}`
-    );
+  if (content.includes('base_token:')) {
+    content = content.replace(/(base_token:\s*\n\s*address:\s*).*/, `$1${tokenAddress}`);
   }
 
   fs.writeFileSync(zkStackYamlPath, content);
@@ -74,14 +63,8 @@ function updateZkStackYaml(tokenAddress: string) {
 }
 
 function updateContractsYaml(tokenAddress: string) {
-  const chainName = process.env.CHAIN_NAME || "custom_zk_chain";
-  const contractsYamlPath = path.join(
-    PROJECT_ROOT,
-    "chains",
-    chainName,
-    "configs",
-    "contracts.yaml"
-  );
+  const chainName = process.env.CHAIN_NAME || 'custom_zkchain';
+  const contractsYamlPath = path.join(PROJECT_ROOT, 'chains', chainName, 'configs', 'contracts.yaml');
 
   if (!fs.existsSync(contractsYamlPath)) {
     log(`⚠ 合约配置文件不存在，跳过更新: ${contractsYamlPath}`);
@@ -90,14 +73,11 @@ function updateContractsYaml(tokenAddress: string) {
 
   log(`更新 ${chainName}/configs/contracts.yaml...`);
 
-  let content = fs.readFileSync(contractsYamlPath, "utf8");
+  let content = fs.readFileSync(contractsYamlPath, 'utf8');
 
   // 更新 l1.base_token_addr
-  if (content.includes("base_token_addr:")) {
-    content = content.replace(
-      /(base_token_addr:\s*).*/,
-      `$1${tokenAddress}`
-    );
+  if (content.includes('base_token_addr:')) {
+    content = content.replace(/(base_token_addr:\s*).*/, `$1${tokenAddress}`);
   }
 
   fs.writeFileSync(contractsYamlPath, content);
@@ -105,13 +85,8 @@ function updateContractsYaml(tokenAddress: string) {
 }
 
 function updatePortalConfig(tokenAddress: string) {
-  const chainName = process.env.CHAIN_NAME || "custom_zk_chain";
-  const portalConfigPath = path.join(
-    PROJECT_ROOT,
-    "configs",
-    "apps",
-    "portal.config.json"
-  );
+  const chainName = process.env.CHAIN_NAME || 'custom_zkchain';
+  const portalConfigPath = path.join(PROJECT_ROOT, 'configs', 'apps', 'portal.config.json');
 
   if (!fs.existsSync(portalConfigPath)) {
     log(`⚠ Portal 配置文件不存在，跳过更新: ${portalConfigPath}`);
@@ -120,7 +95,7 @@ function updatePortalConfig(tokenAddress: string) {
 
   log(`更新 configs/apps/portal.config.json...`);
 
-  const content = fs.readFileSync(portalConfigPath, "utf8");
+  const content = fs.readFileSync(portalConfigPath, 'utf8');
   const config = JSON.parse(content);
 
   // 查找对应的链配置
@@ -131,7 +106,7 @@ function updatePortalConfig(tokenAddress: string) {
         if (chain.tokens && Array.isArray(chain.tokens)) {
           for (const token of chain.tokens) {
             // 更新 base token 的 l1Address（通常是第一个 token）
-            if (token.address === "0x000000000000000000000000000000000000800A") {
+            if (token.address === '0x000000000000000000000000000000000000800A') {
               token.l1Address = tokenAddress;
               log(`✓ 更新了 ${chainName} 的 base token l1Address`);
               break;
@@ -144,18 +119,13 @@ function updatePortalConfig(tokenAddress: string) {
   }
 
   // 保存更新后的配置
-  fs.writeFileSync(portalConfigPath, JSON.stringify(config, null, 2) + "\n");
+  fs.writeFileSync(portalConfigPath, JSON.stringify(config, null, 2) + '\n');
   log(`✓ 已更新 configs/apps/portal.config.json: l1Address=${tokenAddress}`);
 }
 
 function updateExplorerConfig(tokenAddress: string) {
-  const chainName = process.env.CHAIN_NAME || "custom_zk_chain";
-  const explorerConfigPath = path.join(
-    PROJECT_ROOT,
-    "configs",
-    "apps",
-    "explorer.config.json"
-  );
+  const chainName = process.env.CHAIN_NAME || 'custom_zkchain';
+  const explorerConfigPath = path.join(PROJECT_ROOT, 'configs', 'apps', 'explorer.config.json');
 
   if (!fs.existsSync(explorerConfigPath)) {
     log(`⚠ Explorer 配置文件不存在，跳过更新: ${explorerConfigPath}`);
@@ -164,7 +134,7 @@ function updateExplorerConfig(tokenAddress: string) {
 
   log(`更新 configs/apps/explorer.config.json...`);
 
-  const content = fs.readFileSync(explorerConfigPath, "utf8");
+  const content = fs.readFileSync(explorerConfigPath, 'utf8');
   const config = JSON.parse(content);
 
   // 查找对应的网络配置
@@ -179,29 +149,29 @@ function updateExplorerConfig(tokenAddress: string) {
   }
 
   // 保存更新后的配置
-  fs.writeFileSync(explorerConfigPath, JSON.stringify(config, null, 2) + "\n");
+  fs.writeFileSync(explorerConfigPath, JSON.stringify(config, null, 2) + '\n');
   log(`✓ 已更新 configs/apps/explorer.config.json: baseTokenAddress=${tokenAddress}`);
 }
 
 async function main() {
   try {
-    log("开始部署 ERC20 Base Token...");
+    log('开始部署 ERC20 Base Token...');
 
     // 创建 logs 目录
-    const logsDir = path.join(PROJECT_ROOT, "logs");
+    const logsDir = path.join(PROJECT_ROOT, 'logs');
     if (!fs.existsSync(logsDir)) {
       fs.mkdirSync(logsDir, { recursive: true });
     }
 
     // 执行部署
-    log("执行 Hardhat Ignition 部署...");
-    const deployCommand = "npx hardhat ignition deploy ./ignition/modules/CustomBaseToken.ts --network localRethNode --reset";
+    log('执行 Hardhat Ignition 部署...');
+    const deployCommand = 'npx hardhat ignition deploy ./ignition/modules/CustomBaseToken.ts --network localRethNode --reset';
 
     try {
       const output = execSync(deployCommand, {
         cwd: PROJECT_ROOT,
-        encoding: "utf8",
-        stdio: "pipe",
+        encoding: 'utf8',
+        stdio: 'pipe',
       });
 
       // 保存日志
@@ -211,8 +181,8 @@ async function main() {
       // 从输出中提取 token address
       const match = output.match(/CustomBaseToken#CustomBaseToken - (0x[0-9a-fA-F]{40})/);
       if (!match || !match[1]) {
-        error("无法从部署输出中提取 token address");
-        console.log("\n部署输出:");
+        error('无法从部署输出中提取 token address');
+        console.log('\n部署输出:');
         console.log(output);
         process.exit(1);
       }
@@ -221,32 +191,30 @@ async function main() {
       log(`\n✓ Token 部署成功: ${tokenAddress}`);
 
       // 更新配置文件
-      log("\n开始更新配置文件...");
+      log('\n开始更新配置文件...');
       updateEnvFile(tokenAddress);
       updateZkStackYaml(tokenAddress);
       updateContractsYaml(tokenAddress);
       updatePortalConfig(tokenAddress);
       updateExplorerConfig(tokenAddress);
 
-      log("\n=========================================");
-      log("部署完成！");
-      log("=========================================");
+      log('\n=========================================');
+      log('部署完成！');
+      log('=========================================');
       log(`Token Address: ${tokenAddress}`);
-      log("已自动更新以下文件:");
-      log("  - .env");
-      log("  - chains/custom_zk_chain/ZkStack.yaml");
-      log("  - chains/custom_zk_chain/configs/contracts.yaml");
-      log("  - configs/apps/portal.config.json");
-      log("  - configs/apps/explorer.config.json");
-      log("=========================================\n");
-
+      log('已自动更新以下文件:');
+      log('  - .env');
+      log('  - chains/custom_zkchain/ZkStack.yaml');
+      log('  - chains/custom_zkchain/configs/contracts.yaml');
+      log('  - configs/apps/portal.config.json');
+      log('  - configs/apps/explorer.config.json');
+      log('=========================================\n');
     } catch (err: any) {
-      error("部署失败");
+      error('部署失败');
       console.error(err.stdout || err.message);
       fs.writeFileSync(DEPLOY_LOG, err.stdout || err.message);
       process.exit(1);
     }
-
   } catch (err) {
     error(`发生错误: ${err}`);
     process.exit(1);

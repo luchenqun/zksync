@@ -8,8 +8,8 @@
 2. 提取部署的 token 地址
 3. 自动更新以下配置文件中的 token 地址：
    - `.env` 文件中的 `TOKEN_ADDRESS`
-   - `chains/custom_zk_chain/ZkStack.yaml` 中的 `base_token.address`
-   - `chains/custom_zk_chain/configs/contracts.yaml` 中的 `l1.base_token_addr`
+   - `chains/custom_zkchain/ZkStack.yaml` 中的 `base_token.address`
+   - `chains/custom_zkchain/configs/contracts.yaml` 中的 `l1.base_token_addr`
    - `configs/apps/portal.config.json` 中对应链的 `tokens[0].l1Address`
    - `configs/apps/explorer.config.json` 中对应链的 `baseTokenAddress`
 
@@ -69,10 +69,10 @@ CustomBaseTokenModule#CustomBaseToken - 0x5FbDB2315678afecb367f032d93F642f64180a
 [17:30:49] 开始更新配置文件...
 [17:30:49] 更新 .env 文件...
 [17:30:49] ✓ 已更新 .env: TOKEN_ADDRESS=0x5FbDB2315678afecb367f032d93F642f64180aa3
-[17:30:49] 更新 custom_zk_chain/ZkStack.yaml...
-[17:30:49] ✓ 已更新 custom_zk_chain/ZkStack.yaml: base_token.address=0x5FbDB2315678afecb367f032d93F642f64180aa3
-[17:30:49] 更新 custom_zk_chain/configs/contracts.yaml...
-[17:30:49] ✓ 已更新 custom_zk_chain/configs/contracts.yaml: l1.base_token_addr=0x5FbDB2315678afecb367f032d93F642f64180aa3
+[17:30:49] 更新 custom_zkchain/ZkStack.yaml...
+[17:30:49] ✓ 已更新 custom_zkchain/ZkStack.yaml: base_token.address=0x5FbDB2315678afecb367f032d93F642f64180aa3
+[17:30:49] 更新 custom_zkchain/configs/contracts.yaml...
+[17:30:49] ✓ 已更新 custom_zkchain/configs/contracts.yaml: l1.base_token_addr=0x5FbDB2315678afecb367f032d93F642f64180aa3
 
 =========================================
 部署完成！
@@ -80,8 +80,8 @@ CustomBaseTokenModule#CustomBaseToken - 0x5FbDB2315678afecb367f032d93F642f64180a
 Token Address: 0x5FbDB2315678afecb367f032d93F642f64180aa3
 已自动更新以下文件:
   - .env
-  - chains/custom_zk_chain/ZkStack.yaml
-  - chains/custom_zk_chain/configs/contracts.yaml
+  - chains/custom_zkchain/ZkStack.yaml
+  - chains/custom_zkchain/configs/contracts.yaml
   - configs/apps/portal.config.json
   - configs/apps/explorer.config.json
 =========================================
@@ -94,7 +94,7 @@ Token Address: 0x5FbDB2315678afecb367f032d93F642f64180aa3
 TOKEN_ADDRESS=0x5FbDB2315678afecb367f032d93F642f64180aa3
 ```
 
-### chains/custom_zk_chain/ZkStack.yaml
+### chains/custom_zkchain/ZkStack.yaml
 ```yaml
 base_token:
   address: 0x5FbDB2315678afecb367f032d93F642f64180aa3
@@ -102,7 +102,7 @@ base_token:
   denominator: 1
 ```
 
-### chains/custom_zk_chain/configs/contracts.yaml
+### chains/custom_zkchain/configs/contracts.yaml
 ```yaml
 l1:
   base_token_addr: 0x5FbDB2315678afecb367f032d93F642f64180aa3
@@ -115,7 +115,7 @@ l1:
   "hyperchainsConfig": [
     {
       "network": {
-        "key": "custom_zk_chain"
+        "key": "custom_zkchain"
       },
       "tokens": [
         {
@@ -134,7 +134,7 @@ l1:
   "environmentConfig": {
     "networks": [
       {
-        "name": "custom_zk_chain",
+        "name": "custom_zkchain",
         "baseTokenAddress": "0x5FbDB2315678afecb367f032d93F642f64180aa3"
       }
     ]
@@ -150,7 +150,7 @@ l1:
 CHAIN_NAME=my_custom_chain npm run deploy:token
 ```
 
-默认链名称是 `custom_zk_chain`。
+默认链名称是 `custom_zkchain`。
 
 ## 故障排除
 
@@ -159,8 +159,8 @@ CHAIN_NAME=my_custom_chain npm run deploy:token
 如果链还没有创建，脚本会跳过更新 ZkStack.yaml 和 contracts.yaml：
 
 ```
-⚠ 链配置文件不存在，跳过更新: chains/custom_zk_chain/ZkStack.yaml
-⚠ 合约配置文件不存在，跳过更新: chains/custom_zk_chain/configs/contracts.yaml
+⚠ 链配置文件不存在，跳过更新: chains/custom_zkchain/ZkStack.yaml
+⚠ 合约配置文件不存在，跳过更新: chains/custom_zkchain/configs/contracts.yaml
 ```
 
 解决方法：先使用 `zkstack chain create` 创建链，然后再次运行部署脚本。

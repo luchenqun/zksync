@@ -76,7 +76,7 @@ cp .env.example .env
 
 在创建链时，脚本会提示你输入以下配置（默认值已在脚本中设置）：
 
-- **Chain name**: `custom_zk_chain`
+- **Chain name**: `custom_zkchain`
 - **Chain ID**: `272`
 - **Wallet**: `Localhost`
 - **Prover mode**: `NoProofs`
@@ -118,7 +118,7 @@ zkstack chain init --dev
 zkstack server
 ```
 
-服务器将监听 `3150` 端口（可在 `chains/custom_zk_chain/configs/general.yaml` 中查看）。
+服务器将监听 `3150` 端口（可在 `chains/custom_zkchain/configs/general.yaml` 中查看）。
 
 ### 5. Bridge Base Token
 
@@ -158,16 +158,16 @@ npm run bridge:eth
 
 ## 环境变量说明
 
-| 变量 | 说明 | 默认值 |
-|------|------|--------|
-| `WALLET_PRIVATE_KEY` | 部署者钱包私钥 | - |
-| `L1_RPC` | L1 节点 RPC URL | `http://127.0.0.1:8545` |
-| `L2_RPC` | L2 节点 RPC URL | `http://127.0.0.1:3150` |
-| `TOKEN_ADDRESS` | ERC20 token 地址 | 部署后自动填充 |
-| `CHAIN_NAME` | 链名称 | `custom_zk_chain` |
-| `CHAIN_ID` | 链 ID | `272` |
-| `TOKEN_NAME` | Token 名称 | `ZK Base Token` |
-| `TOKEN_SYMBOL` | Token 符号 | `ZKBT` |
+| 变量                 | 说明             | 默认值                  |
+| -------------------- | ---------------- | ----------------------- |
+| `WALLET_PRIVATE_KEY` | 部署者钱包私钥   | -                       |
+| `L1_RPC`             | L1 节点 RPC URL  | `http://127.0.0.1:8545` |
+| `L2_RPC`             | L2 节点 RPC URL  | `http://127.0.0.1:3150` |
+| `TOKEN_ADDRESS`      | ERC20 token 地址 | 部署后自动填充          |
+| `CHAIN_NAME`         | 链名称           | `custom_zkchain`        |
+| `CHAIN_ID`           | 链 ID            | `272`                   |
+| `TOKEN_NAME`         | Token 名称       | `ZK Base Token`         |
+| `TOKEN_SYMBOL`       | Token 符号       | `ZKBT`                  |
 
 ## 常见操作
 
@@ -201,8 +201,8 @@ docker-compose down
 1. 启动容器：`zkstack containers`
 2. 重新部署 token：`npm run deploy:token`
 3. 更新配置文件中的 token address：
-   - `chains/custom_zk_chain/configs/contracts.yaml` 中的 `l1.base_token_addr`
-   - `chains/custom_zk_chain/ZkStack.yaml` 中的 `base_token.address`
+   - `chains/custom_zkchain/configs/contracts.yaml` 中的 `l1.base_token_addr`
+   - `chains/custom_zkchain/ZkStack.yaml` 中的 `base_token.address`
 4. 初始化：`zkstack ecosystem init --dev`
 5. 启动服务器：`zkstack server`
 6. Bridge token：`npm run bridge:base-token`
