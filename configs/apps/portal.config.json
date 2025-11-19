@@ -1,0 +1,40 @@
+{
+  "nodeType": "hyperchain",
+  "hyperchainsConfig": [
+    {
+      "network": {
+        "id": 271,
+        "key": "zkchain",
+        "name": "zkchain",
+        "rpcUrl": "http://127.0.0.1:3050/",
+        "l1Network": {
+          "id": 9,
+          "name": "l1-chain",
+          "network": "localhost",
+          "nativeCurrency": {
+            "name": "Ether",
+            "symbol": "ETH",
+            "decimals": 18
+          },
+          "rpcUrls": {
+            "default": {
+              "http": ["http://127.0.0.1:8545"]
+            },
+            "public": {
+              "http": ["http://127.0.0.1:8545"]
+            }
+          }
+        }
+      },
+      "tokens": [
+        {
+          "address": "0x000000000000000000000000000000000000800A",
+          "symbol": "ETH",
+          "decimals": 18,
+          "l1Address": "0x0000000000000000000000000000000000000000",
+          "name": "Ether"
+        }
+      ]
+    }
+  ]
+}

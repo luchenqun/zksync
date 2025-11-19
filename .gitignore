@@ -2,3 +2,11 @@ zksync-era
 reth/chaindata
 !reth/chaindata/
 !reth/chaindata/reth_config
+chains/zkchain/configs/contracts.yaml
+chains/zkchain/configs/external_node.yaml
+chains/zkchain/configs/general.yaml
+chains/zkchain/configs/genesis.yaml
+chains/zkchain/configs/secrets.yaml
+configs/contracts.yaml
+configs/erc20.yaml
+era-observability/
