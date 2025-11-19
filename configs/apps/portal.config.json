@@ -19,14 +19,10 @@
           },
           "rpcUrls": {
             "default": {
-              "http": [
-                "http://127.0.0.1:8545"
-              ]
+              "http": ["http://127.0.0.1:8545"]
             },
             "public": {
-              "http": [
-                "http://127.0.0.1:8545"
-              ]
+              "http": ["http://127.0.0.1:8545"]
             }
           }
         }
@@ -38,6 +34,41 @@
           "decimals": 18,
           "l1Address": "0x0000000000000000000000000000000000000000",
           "name": "Ether"
+        }
+      ]
+    },
+    {
+      "network": {
+        "id": 272,
+        "key": "custom_zk_chain",
+        "name": "custom_zk_chain",
+        "rpcUrl": "http://127.0.0.1:3150/",
+        "l1Network": {
+          "id": 9,
+          "name": "Localhost",
+          "network": "localhost",
+          "nativeCurrency": {
+            "name": "Ether",
+            "symbol": "ETH",
+            "decimals": 18
+          },
+          "rpcUrls": {
+            "default": {
+              "http": ["http://127.0.0.1:8545"]
+            },
+            "public": {
+              "http": ["http://127.0.0.1:8545"]
+            }
+          }
+        }
+      },
+      "tokens": [
+        {
+          "address": "0x000000000000000000000000000000000000800A",
+          "symbol": "ZKBT",
+          "decimals": 18,
+          "l1Address": "0xe510c4396d63a563f03f7d9ceeee667780df6e1a",
+          "name": "ZK Base Token"
         }
       ]
     }

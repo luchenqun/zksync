@@ -93,6 +93,59 @@ else
   log "⚠ 合约配置文件不存在，跳过更新: $CONTRACTS_YAML"
 fi
 
+# 更新 portal.config.json
+PORTAL_CONFIG="${PROJECT_ROOT}/configs/apps/portal.config.json"
+
+if [ -f "$PORTAL_CONFIG" ]; then
+  log "更新 configs/apps/portal.config.json..."
+
+  # 使用 jq 或手动替换
+  if command -v jq >/dev/null 2>&1; then
+    # 使用 jq 更新 JSON
+    TMP_FILE=$(mktemp)
+    jq --arg chain "$CHAIN_NAME" --arg addr "$TOKEN_ADDRESS" \
+      '(.hyperchainsConfig[] | select(.network.key == $chain) | .tokens[] | select(.address == "0x000000000000000000000000000000000000800A") | .l1Address) = $addr' \
+      "$PORTAL_CONFIG" > "$TMP_FILE" && mv "$TMP_FILE" "$PORTAL_CONFIG"
+    log "✓ 已更新 configs/apps/portal.config.json"
+  else
+    # 如果没有 jq，使用 sed（不太可靠，但可以工作）
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+      sed -i '' "s|\"l1Address\": \"0x[0-9a-fA-F]*\"|\"l1Address\": \"${TOKEN_ADDRESS}\"|g" "$PORTAL_CONFIG"
+    else
+      sed -i "s|\"l1Address\": \"0x[0-9a-fA-F]*\"|\"l1Address\": \"${TOKEN_ADDRESS}\"|g" "$PORTAL_CONFIG"
+    fi
+    log "✓ 已更新 configs/apps/portal.config.json (使用 sed)"
+  fi
+else
+  log "⚠ Portal 配置文件不存在，跳过更新: $PORTAL_CONFIG"
+fi
+
+# 更新 explorer.config.json
+EXPLORER_CONFIG="${PROJECT_ROOT}/configs/apps/explorer.config.json"
+
+if [ -f "$EXPLORER_CONFIG" ]; then
+  log "更新 configs/apps/explorer.config.json..."
+
+  if command -v jq >/dev/null 2>&1; then
+    # 使用 jq 更新 JSON
+    TMP_FILE=$(mktemp)
+    jq --arg chain "$CHAIN_NAME" --arg addr "$TOKEN_ADDRESS" \
+      '(.environmentConfig.networks[] | select(.name == $chain) | .baseTokenAddress) = $addr' \
+      "$EXPLORER_CONFIG" > "$TMP_FILE" && mv "$TMP_FILE" "$EXPLORER_CONFIG"
+    log "✓ 已更新 configs/apps/explorer.config.json"
+  else
+    # 如果没有 jq，使用 sed
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+      sed -i '' "s|\"baseTokenAddress\": \"0x[0-9a-fA-F]*\"|\"baseTokenAddress\": \"${TOKEN_ADDRESS}\"|g" "$EXPLORER_CONFIG"
+    else
+      sed -i "s|\"baseTokenAddress\": \"0x[0-9a-fA-F]*\"|\"baseTokenAddress\": \"${TOKEN_ADDRESS}\"|g" "$EXPLORER_CONFIG"
+    fi
+    log "✓ 已更新 configs/apps/explorer.config.json (使用 sed)"
+  fi
+else
+  log "⚠ Explorer 配置文件不存在，跳过更新: $EXPLORER_CONFIG"
+fi
+
 log "========================================="
 log "部署完成！"
 log "========================================="
@@ -101,4 +154,6 @@ log "已自动更新以下文件:"
 log "  - .env"
 log "  - chains/${CHAIN_NAME}/ZkStack.yaml"
 log "  - chains/${CHAIN_NAME}/configs/contracts.yaml"
+log "  - configs/apps/portal.config.json"
+log "  - configs/apps/explorer.config.json"
 log "========================================="

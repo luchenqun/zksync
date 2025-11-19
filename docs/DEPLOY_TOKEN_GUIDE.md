@@ -10,6 +10,8 @@
    - `.env` 文件中的 `TOKEN_ADDRESS`
    - `chains/custom_zk_chain/ZkStack.yaml` 中的 `base_token.address`
    - `chains/custom_zk_chain/configs/contracts.yaml` 中的 `l1.base_token_addr`
+   - `configs/apps/portal.config.json` 中对应链的 `tokens[0].l1Address`
+   - `configs/apps/explorer.config.json` 中对应链的 `baseTokenAddress`
 
 ## 使用方法
 
@@ -80,6 +82,8 @@ Token Address: 0x5FbDB2315678afecb367f032d93F642f64180aa3
   - .env
   - chains/custom_zk_chain/ZkStack.yaml
   - chains/custom_zk_chain/configs/contracts.yaml
+  - configs/apps/portal.config.json
+  - configs/apps/explorer.config.json
 =========================================
 ```
 
@@ -103,6 +107,39 @@ base_token:
 l1:
   base_token_addr: 0x5FbDB2315678afecb367f032d93F642f64180aa3
   # ... 其他配置
+```
+
+### configs/apps/portal.config.json
+```json
+{
+  "hyperchainsConfig": [
+    {
+      "network": {
+        "key": "custom_zk_chain"
+      },
+      "tokens": [
+        {
+          "address": "0x000000000000000000000000000000000000800A",
+          "l1Address": "0x5FbDB2315678afecb367f032d93F642f64180aa3"
+        }
+      ]
+    }
+  ]
+}
+```
+
+### configs/apps/explorer.config.json
+```json
+{
+  "environmentConfig": {
+    "networks": [
+      {
+        "name": "custom_zk_chain",
+        "baseTokenAddress": "0x5FbDB2315678afecb367f032d93F642f64180aa3"
+      }
+    ]
+  }
+}
 ```
 
 ## 环境变量

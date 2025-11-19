@@ -104,6 +104,85 @@ function updateContractsYaml(tokenAddress: string) {
   log(`✓ 已更新 ${chainName}/configs/contracts.yaml: l1.base_token_addr=${tokenAddress}`);
 }
 
+function updatePortalConfig(tokenAddress: string) {
+  const chainName = process.env.CHAIN_NAME || "custom_zk_chain";
+  const portalConfigPath = path.join(
+    PROJECT_ROOT,
+    "configs",
+    "apps",
+    "portal.config.json"
+  );
+
+  if (!fs.existsSync(portalConfigPath)) {
+    log(`⚠ Portal 配置文件不存在，跳过更新: ${portalConfigPath}`);
+    return;
+  }
+
+  log(`更新 configs/apps/portal.config.json...`);
+
+  const content = fs.readFileSync(portalConfigPath, "utf8");
+  const config = JSON.parse(content);
+
+  // 查找对应的链配置
+  if (config.hyperchainsConfig && Array.isArray(config.hyperchainsConfig)) {
+    for (const chain of config.hyperchainsConfig) {
+      if (chain.network && chain.network.key === chainName) {
+        // 更新 tokens 中的 l1Address
+        if (chain.tokens && Array.isArray(chain.tokens)) {
+          for (const token of chain.tokens) {
+            // 更新 base token 的 l1Address（通常是第一个 token）
+            if (token.address === "0x000000000000000000000000000000000000800A") {
+              token.l1Address = tokenAddress;
+              log(`✓ 更新了 ${chainName} 的 base token l1Address`);
+              break;
+            }
+          }
+        }
+        break;
+      }
+    }
+  }
+
+  // 保存更新后的配置
+  fs.writeFileSync(portalConfigPath, JSON.stringify(config, null, 2) + "\n");
+  log(`✓ 已更新 configs/apps/portal.config.json: l1Address=${tokenAddress}`);
+}
+
+function updateExplorerConfig(tokenAddress: string) {
+  const chainName = process.env.CHAIN_NAME || "custom_zk_chain";
+  const explorerConfigPath = path.join(
+    PROJECT_ROOT,
+    "configs",
+    "apps",
+    "explorer.config.json"
+  );
+
+  if (!fs.existsSync(explorerConfigPath)) {
+    log(`⚠ Explorer 配置文件不存在，跳过更新: ${explorerConfigPath}`);
+    return;
+  }
+
+  log(`更新 configs/apps/explorer.config.json...`);
+
+  const content = fs.readFileSync(explorerConfigPath, "utf8");
+  const config = JSON.parse(content);
+
+  // 查找对应的网络配置
+  if (config.environmentConfig && config.environmentConfig.networks && Array.isArray(config.environmentConfig.networks)) {
+    for (const network of config.environmentConfig.networks) {
+      if (network.name === chainName) {
+        network.baseTokenAddress = tokenAddress;
+        log(`✓ 更新了 ${chainName} 的 baseTokenAddress`);
+        break;
+      }
+    }
+  }
+
+  // 保存更新后的配置
+  fs.writeFileSync(explorerConfigPath, JSON.stringify(config, null, 2) + "\n");
+  log(`✓ 已更新 configs/apps/explorer.config.json: baseTokenAddress=${tokenAddress}`);
+}
+
 async function main() {
   try {
     log("开始部署 ERC20 Base Token...");
@@ -146,6 +225,8 @@ async function main() {
       updateEnvFile(tokenAddress);
       updateZkStackYaml(tokenAddress);
       updateContractsYaml(tokenAddress);
+      updatePortalConfig(tokenAddress);
+      updateExplorerConfig(tokenAddress);
 
       log("\n=========================================");
       log("部署完成！");
@@ -155,6 +236,8 @@ async function main() {
       log("  - .env");
       log("  - chains/custom_zk_chain/ZkStack.yaml");
       log("  - chains/custom_zk_chain/configs/contracts.yaml");
+      log("  - configs/apps/portal.config.json");
+      log("  - configs/apps/explorer.config.json");
       log("=========================================\n");
 
     } catch (err: any) {
