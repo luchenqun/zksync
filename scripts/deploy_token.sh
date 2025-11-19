@@ -57,8 +57,48 @@ log "验证 token balance..."
 BALANCE=$(cast balance --erc20 "$TOKEN_ADDRESS" "$GOVERNOR_ADDRESS" --rpc-url http://127.0.0.1:8545)
 log "Governor ($GOVERNOR_ADDRESS) balance: $BALANCE"
 
+# 更新 ZkStack.yaml
+CHAIN_NAME="${CHAIN_NAME:-custom_zk_chain}"
+ZKSTACK_YAML="${PROJECT_ROOT}/chains/${CHAIN_NAME}/ZkStack.yaml"
+
+if [ -f "$ZKSTACK_YAML" ]; then
+  log "更新 ${CHAIN_NAME}/ZkStack.yaml..."
+  # 使用 sed 更新 base_token.address
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    # macOS
+    sed -i '' "s|^\(\s*address:\s*\).*|\1${TOKEN_ADDRESS}|" "$ZKSTACK_YAML"
+  else
+    # Linux
+    sed -i "s|^\(\s*address:\s*\).*|\1${TOKEN_ADDRESS}|" "$ZKSTACK_YAML"
+  fi
+  log "✓ 已更新 ${CHAIN_NAME}/ZkStack.yaml"
+else
+  log "⚠ 链配置文件不存在，跳过更新: $ZKSTACK_YAML"
+fi
+
+# 更新 contracts.yaml
+CONTRACTS_YAML="${PROJECT_ROOT}/chains/${CHAIN_NAME}/configs/contracts.yaml"
+
+if [ -f "$CONTRACTS_YAML" ]; then
+  log "更新 ${CHAIN_NAME}/configs/contracts.yaml..."
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    # macOS
+    sed -i '' "s|^\(\s*base_token_addr:\s*\).*|\1${TOKEN_ADDRESS}|" "$CONTRACTS_YAML"
+  else
+    # Linux
+    sed -i "s|^\(\s*base_token_addr:\s*\).*|\1${TOKEN_ADDRESS}|" "$CONTRACTS_YAML"
+  fi
+  log "✓ 已更新 ${CHAIN_NAME}/configs/contracts.yaml"
+else
+  log "⚠ 合约配置文件不存在，跳过更新: $CONTRACTS_YAML"
+fi
+
 log "========================================="
 log "部署完成！"
+log "========================================="
 log "Token Address: $TOKEN_ADDRESS"
-log "已保存到 .env 文件"
+log "已自动更新以下文件:"
+log "  - .env"
+log "  - chains/${CHAIN_NAME}/ZkStack.yaml"
+log "  - chains/${CHAIN_NAME}/configs/contracts.yaml"
 log "========================================="

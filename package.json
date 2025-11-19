@@ -4,7 +4,7 @@
   "description": "ZKsync ERC20 Base Token Setup",
   "scripts": {
     "build": "npx hardhat compile",
-    "deploy:token": "hardhat ignition deploy ./ignition/modules/CustomBaseToken.ts --network localRethNode",
+    "deploy:token": "ts-node scripts/deployToken.ts",
     "bridge:base-token": "hardhat run scripts/depositBaseToken.ts",
     "bridge:eth": "hardhat run scripts/depositETH.ts"
   },
@@ -14,9 +14,11 @@
     "@openzeppelin/contracts": "^5.0.0",
     "@typechain/ethers-v6": "^0.5.0",
     "@typechain/hardhat": "^9.0.0",
+    "@types/node": "^20.0.0",
     "dotenv": "^16.0.0",
     "ethers": "^6.0.0",
     "hardhat": "^2.22.0",
+    "js-yaml": "^4.1.0",
     "ts-node": "^10.0.0",
     "typechain": "^8.0.0",
     "typescript": "^5.0.0",
