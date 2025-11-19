@@ -174,6 +174,7 @@ remove_portal_container() {
 # 启动 Explorer 后端
 start_explorer_backend() {
   log "启动 Explorer 后端 (docker-compose)..."
+  ensure_explorer_database
   cd "$REPO_ROOT"
   "${DOCKER_COMPOSE_CMD[@]}" -f "$EXPLORER_COMPOSE_FILE" up -d
   log "Explorer 后端已启动"
@@ -192,6 +193,33 @@ remove_explorer_container() {
   if docker ps -a --format '{{.Names}}' | grep -q "^${EXPLORER_CONTAINER_NAME}$"; then
     log "清理残留的 Explorer 容器: $EXPLORER_CONTAINER_NAME"
     docker rm -f "$EXPLORER_CONTAINER_NAME" 2>/dev/null || true
+  fi
+}
+
+ensure_explorer_database() {
+  local root_compose="$REPO_ROOT/docker-compose.yml"
+  local db_name="zksync_explorer_localhost_${CHAIN_NAME}"
+
+  if [[ ! -f "$root_compose" ]]; then
+    log "警告: 未找到 $root_compose，无法自动确认 explorer 数据库是否存在"
+    return 0
+  fi
+
+  log "确保 Postgres 服务运行 (docker-compose postgres)..."
+  "${DOCKER_COMPOSE_CMD[@]}" -f "$root_compose" up -d postgres >/dev/null
+
+  log "检查数据库 $db_name 是否存在..."
+  if ! ${DOCKER_COMPOSE_CMD[@]} -f "$root_compose" exec -T postgres psql -U postgres -tAc \
+    "SELECT 1 FROM pg_database WHERE datname='${db_name}'" | grep -q 1; then
+    log "数据库 $db_name 不存在，正在创建..."
+    ${DOCKER_COMPOSE_CMD[@]} -f "$root_compose" exec -T postgres psql -U postgres -c \
+      "CREATE DATABASE \"${db_name}\";" >/dev/null || {
+        log "错误: 创建数据库 $db_name 失败，请手动检查 Postgres 服务"
+        exit 1
+      }
+    log "数据库 $db_name 创建完成"
+  else
+    log "数据库 $db_name 已存在"
   fi
 }
 

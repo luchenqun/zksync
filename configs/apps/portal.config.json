@@ -10,7 +10,7 @@
         "hidden": false,
         "l1Network": {
           "id": 9,
-          "name": "l1chain",
+          "name": "Localhost",
           "network": "localhost",
           "nativeCurrency": {
             "name": "Ether",
@@ -19,10 +19,14 @@
           },
           "rpcUrls": {
             "default": {
-              "http": ["http://127.0.0.1:8545"]
+              "http": [
+                "http://127.0.0.1:8545"
+              ]
             },
             "public": {
-              "http": ["http://127.0.0.1:8545"]
+              "http": [
+                "http://127.0.0.1:8545"
+              ]
             }
           }
         }
