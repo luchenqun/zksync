@@ -12,7 +12,7 @@
         "hostnames": [],
         "icon": "/images/icons/zksync-arrows.svg",
         "maintenance": false,
-        "published": true,
+        "published": false,
         "verificationApiUrl": "http://127.0.0.1:3070",
         "prividium": false
       },

@@ -483,7 +483,11 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-set -- "${POSITIONAL[@]}"
+if ((${#POSITIONAL[@]})); then
+  set -- "${POSITIONAL[@]}"
+else
+  set --
+fi
 
 # 如果没有命令，默认为 help
 CMD="${CMD:-help}"
