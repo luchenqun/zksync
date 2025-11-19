@@ -1,0 +1,21 @@
+{
+  "appEnvironment": "default",
+  "environmentConfig": {
+    "networks": [
+      {
+        "name": "zkchain",
+        "l2NetworkName": "zkchain",
+        "l2ChainId": 271,
+        "rpcUrl": "http://127.0.0.1:3050/",
+        "apiUrl": "http://127.0.0.1:3002",
+        "baseTokenAddress": "0x000000000000000000000000000000000000800A",
+        "hostnames": [],
+        "icon": "/images/icons/zksync-arrows.svg",
+        "maintenance": false,
+        "published": true,
+        "verificationApiUrl": "http://127.0.0.1:3070",
+        "prividium": false
+      }
+    ]
+  }
+}
