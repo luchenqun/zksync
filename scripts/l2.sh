@@ -8,7 +8,6 @@ log() {
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 PID_DIR="$REPO_ROOT/.pids"
-PORTAL_CONTAINER_NAME="zksync-portal-app"
 
 # 默认链名称
 CHAIN_NAME="${CHAIN_NAME:-zkchain}"
@@ -196,6 +195,43 @@ remove_explorer_container() {
   fi
 }
 
+clean_explorer_data() {
+  log "========== 清理 Explorer 数据 =========="
+  stop_explorer
+  stop_explorer_backend
+
+  local root_compose="$REPO_ROOT/docker-compose.yml"
+  local db_name="zksync_explorer_localhost_${CHAIN_NAME}"
+
+  if [[ ! -f "$root_compose" ]]; then
+    log "未找到 $root_compose，无法清理数据库"
+    return 1
+  fi
+
+  log "确保 Postgres 服务运行 (docker-compose postgres)..."
+  "${DOCKER_COMPOSE_CMD[@]}" -f "$root_compose" up -d postgres >/dev/null
+
+  log "终止数据库 $db_name 的所有连接"
+  ${DOCKER_COMPOSE_CMD[@]} -f "$root_compose" exec -T postgres psql -U postgres -c \
+    "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '$db_name';" >/dev/null 2>&1 || true
+
+  log "删除数据库 $db_name (如不存在将忽略)..."
+  ${DOCKER_COMPOSE_CMD[@]} -f "$root_compose" exec -T postgres psql -U postgres -c \
+    "DROP DATABASE IF EXISTS \"$db_name\";" >/dev/null 2>&1 || {
+      log "警告: 删除数据库 $db_name 失败"
+      return 1
+    }
+
+  log "创建全新的数据库 $db_name"
+  ${DOCKER_COMPOSE_CMD[@]} -f "$root_compose" exec -T postgres psql -U postgres -c \
+    "CREATE DATABASE \"$db_name\";" >/dev/null 2>&1 || {
+      log "警告: 创建数据库 $db_name 失败"
+      return 1
+    }
+
+  log "Explorer 数据已清理，可重新启动相关服务"
+}
+
 # 启动 Explorer 前端
 start_explorer() {
   if is_running "$EXPLORER_PID_FILE"; then
@@ -321,6 +357,7 @@ show_usage() {
   stop        停止所有服务
   restart     重启所有服务
   status      查看所有服务状态
+  clean       清理 Explorer 数据（删除并重建 explorer 数据库）
   
   或者单独控制:
   start-server           启动 L2 服务器
@@ -417,6 +454,9 @@ case "$CMD" in
     ;;
   stop-explorer)
     stop_explorer
+    ;;
+  clean)
+    clean_explorer_data
     ;;
   help|--help|-h)
     show_usage
