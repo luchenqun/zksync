@@ -1,0 +1,443 @@
+---
+title: Customizing Your ZKsync Chain
+description: Create a ZKsync Chain with a custom ERC20 base token.
+
+---
+
+One way you can customize your ZKsync Chain is by changing the base token used for gas from ETH to an ERC20 token.
+Let's try customizing a new chain by using a custom ERC20 base token.
+
+With the initial release of ZK stack, custom ERC20 tokens must be added to an allowlist for use as a base token for a chain.
+The allowed addresses are stored and checked in the `BridgeHub` contract on the L1.
+In the future it will be possible to deploy a chain that uses a new custom base token in a permissionless process.
+
+For now, you have the ability to add any tokens to the allowlist in your local ecosystem.
+
+The overall flow for setting up a local chain with a custom base token looks like this:
+
+1. Deploy an ERC20 token to the L1.
+1. Create your new chain that uses the ERC20 token and set it as the default.
+1. Send ERC20 tokens to the ecosystem and chain governor addresses on the L1.
+1. Initialize the new chain in the ecosystem.
+1. Bridge tokens from the L1 to your new chain.
+
+## Deploying an ERC20 token
+
+For the first step of this flow, let's make a new hardhat project.
+
+### Setup
+
+Move out of your previous folder and make a new folder for the ERC20 token contract.
+
+```bash
+mkdir base-token-contract
+cd base-token-contract
+```
+
+Then, run the `hardhat init` command to generate a new project:
+
+:test-action{actionId="new-hh-project"}
+
+```bash
+npx hardhat --init
+```
+
+Select the option to use `hardhat-2` with `typescript` and `mocha-ethers`.
+Select yes to install the default dependencies.
+
+::callout{icon="i-heroicons-exclamation-circle"}
+Hardhat v3 is not fully supported for `@matterlabs/hardhat-zksync`.
+::
+
+Run the command below to install the necessary dependencies:
+
+:test-action{actionId="install-token-deps"}
+
+::code-group
+
+```bash [npm]
+npm i -D typescript ts-node @openzeppelin/contracts @nomicfoundation/hardhat-ethers @typechain/ethers-v6 @typechain/hardhat typechain ethers dotenv
+```
+
+```bash [yarn]
+yarn add -D typescript ts-node @openzeppelin/contracts @nomicfoundation/hardhat-ethers @typechain/ethers-v6 @typechain/hardhat typechain ethers dotenv
+```
+
+```bash [pnpm]
+pnpm add -D typescript ts-node @openzeppelin/contracts @nomicfoundation/hardhat-ethers @typechain/ethers-v6 @typechain/hardhat typechain ethers dotenv
+```
+
+```bash [bun]
+bun add -D typescript ts-node @openzeppelin/contracts @nomicfoundation/hardhat-ethers @typechain/ethers-v6 @typechain/hardhat typechain ethers dotenv
+```
+
+::
+
+### Configuring Hardhat
+
+Once installed, replace your existing config in `hardhat.config.ts` with the config below:
+
+:test-action{actionId="hh-config"}
+
+```ts [hardhat.config.ts]
+import { HardhatUserConfig } from "hardhat/config";
+import "@nomicfoundation/hardhat-toolbox";
+
+import dotenv from "dotenv";
+dotenv.config();
+
+const config: HardhatUserConfig = {
+  solidity: "0.8.28",
+  networks: {
+        localRethNode: {
+          url: "http://localhost:8545",
+          accounts: [process.env.WALLET_PRIVATE_KEY as any],
+        },
+      },
+};
+
+export default config;
+```
+
+Now hardhat is configured to connect to our local reth node (the L1) running at local port `8545`.
+For the inital release of the ZK stack, we have to deploy the token to the L1 and bridge to our ZKsync Chain later.
+However, in the future this may change.
+
+Next, create a `.env` file with:
+
+:test-action{actionId="create-env"}
+
+```bash
+touch .env
+```
+
+Add the governor private key from our elastic_chain setup to ensure that this address becomes the owner of the token contract. Here's how
+you can add the `WALLET_PRIVATE_KEY` environment variable:
+
+:test-action{actionId="new-env"}
+
+```bash
+# Use the private key of the `governor` from my_elastic_network/configs/wallets.yaml
+WALLET_PRIVATE_KEY=<governor_private_key_from_configs_wallets.yaml>
+```
+
+### Deploying an ERC20 Contract
+
+Now that we've configured hardhat and the deployer wallet, let's add the contract and deploy script.
+Rename the example generated contract file to `CustomBaseToken.sol`:
+
+:test-action{actionId="rename-contract-file"}
+
+```bash
+mv contracts/Lock.sol contracts/CustomBaseToken.sol
+```
+
+Open the `CustomBaseToken.sol` file and replace the example contract with the ERC20 contract below:
+
+:test-action{actionId="token-contract"}
+
+```solidity [CustomBaseToken.sol]
+// SPDX-License-Identifier: Unlicensed
+pragma solidity ^0.8.28;
+
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
+
+contract CustomBaseToken is ERC20, Ownable, ERC20Burnable {
+    constructor(string memory name, string memory symbol) ERC20(name, symbol) Ownable(msg.sender) {
+        _mint(msg.sender, 100 * 10 ** decimals());
+    }
+
+    function mint(address to, uint256 amount) public onlyOwner {
+        _mint(to, amount);
+    }
+}
+```
+
+Next, let's update the ignition module to deploy the ERC20 contract.
+Rename the module file with the command below:
+
+:test-action{actionId="rename-module"}
+
+```bash
+mv ignition/modules/Lock.ts ignition/modules/CustomBaseToken.ts
+```
+
+Then, replace the module file with the code below:
+
+:test-action{actionId="new-deploy-module"}
+
+```ts [CustomBaseToken.ts]
+import { buildModule } from "@nomicfoundation/hardhat-ignition/modules";
+
+const CustomBaseTokenModule = buildModule("CustomBaseTokenModule", (m) => {
+  const tokenName = m.getParameter("name", "ZK Base Token");
+  const tokenSymbol = m.getParameter("symbol", "ZKBT");
+
+  const baseToken = m.contract("CustomBaseToken", [tokenName, tokenSymbol]);
+
+  return { baseToken };
+});
+
+export default CustomBaseTokenModule;
+```
+
+To run the module and deploy the token contract, run:
+
+:test-action{actionId="ignore-deploy-confirm"}
+:test-action{actionId="deploy-token-contract"}
+
+```bash
+npx hardhat ignition deploy ./ignition/modules/CustomBaseToken.ts --network localRethNode
+```
+
+Select `y` to confirm to deploy the contract to the `localRethNode`.
+After deploying, the token contract address should be logged in your console.
+
+The constructor function in the contract should have minted tokens to the deployer address.
+Let's verify that the tokens were minted to the deployer address using the Foundry `cast` CLI:
+
+:test-action{actionId="get-contract-address"}
+:test-action{actionId="get-gov-address"}
+:test-action{actionId="check-token-balance"}
+
+```bash
+cast balance --erc20 <0xYOUR_TOKEN_ADDRESS> <0xYOUR_GOVERNOR_ADDRESS> \
+--rpc-url http://localhost:8545
+```
+
+::callout{icon="i-heroicons-light-bulb"}
+The token address should be the contract address for the token you just deployed.
+Your governor address should be the public address of the governor at `my_elastic_network/configs/wallets.yaml`.
+::
+
+## Creating a new chain
+
+Now that your ERC20 token is deployed, you can create a new chain.
+
+First, shut down the node server running for `zk_chain_1` by terminating the process.
+
+:test-action{actionId="shutdown-server"}
+
+Move back into your Elastic Network ecosystem folder and run the `zkstack chain create` subcommand:
+
+:test-action{actionId="create-new-chain"}
+
+```bash
+zkstack chain create
+```
+
+This time, use the answers below:
+
+```bash
+❯ zkstack chain create
+
+┌   ZK Stack CLI
+│
+◇  What do you want to name the chain?
+│  custom_zk_chain
+│
+◇  What's the chain id?
+│  272
+│
+◇  Select how do you want to create the wallet
+│  Localhost
+│
+◇  Select the prover mode
+│  NoProofs
+│
+◇  Select the commit data generator mode
+│  Rollup
+│
+◇  Select the base token to use
+│  Custom
+│
+◇  What is the token address?
+│  <0x_YOUR_TOKEN_ADDRESS>
+│
+◇  What is the base token price nominator?
+│  1
+│
+◇  What is the base token price denominator?
+│  1
+│
+◇  Enable EVM emulator?
+│  Yes
+│
+◇  Set this chain as default?
+│  Yes
+```
+
+The base token nominator and denominator are used to define the relation of the base token price with ETH.
+For example, if we set the nominator to 20 and the denominator to 1, together the relation is 20/1,
+this would mean that 20 tokens would be given the equivalent value as 1 ETH for gas.
+For testing purposes, we'll just use a 1:1 ratio.
+
+### Initializing the chain
+
+::callout{icon="i-heroicons-exclamation-triangle" color="amber"}
+Make sure the server for `zk_chain_1` that you started in the previous section is shut down.
+::
+
+Next, initialize the chain in the ecosystem with the command below.
+
+:test-action{actionId="init-new-chain"}
+
+```bash
+zkstack chain init --dev
+```
+
+During the initialization process, your ERC20 token address gets added to the allowlist mentioned earlier.
+
+Now that the chain is initialized, you can start the chain server:
+
+:test-action{actionId="start-server-2"}
+
+```bash
+zkstack server
+```
+
+Your new chain should be running at port `3150`.
+You can confirm this by looking for a log in the server that says `Initialized HTTP API on 0.0.0.0:3150`,
+or by looking in your `my_elastic_network/chains/custom_zk_chain/configs/general.yaml` file at the `web3_json_rpc:http_port` value.
+
+## Bridging the base token to your chain
+
+The last step is to bridge some ERC20 tokens from the L1 to the new chain.
+Base tokens can not be minted on the L2 without being backed by the corresponding L1 amount. In the future, there will be more flexibility for this.
+
+Instead of using the ZKsync CLI here, we'll use the `zksync-ethers` SDK.
+To try this out, open your hardhat project `zk-chain-test` from the previous section,
+and run the commands below to create a new script file:
+
+:test-action{actionId="new-bridge-script"}
+
+```bash
+mkdir scripts
+touch scripts/depositBaseToken.ts
+```
+
+Then copy and paste the script below.
+
+:test-action{actionId="bridge-script-code"}
+
+```ts [depositBaseToken.ts]
+:code-import{filePath="custom-zk-chain/scripts/depositBaseToken.ts"}
+```
+
+:test-action{actionId="update-rpc-url"}
+:test-action{actionId="update-gov-pk"}
+
+Before running the script:
+
+1. Update the RPC url in the `hardhat.config.ts` file so it connects to port `3150` instead of `3050`.
+1. Update the `WALLET_PRIVATE_KEY` variable in your `.env` file to your governor address private key,
+or make sure the wallet you are using has some of the base tokens on the L1.
+
+Then, run the script with the `hardhat run` command:
+
+:test-action{actionId="run-bridge-script"}
+
+::code-group
+
+```bash [npm]
+npx hardhat run scripts/depositBaseToken.ts
+```
+
+```bash [yarn]
+yarn hardhat run scripts/depositBaseToken.ts
+```
+
+```bash [pnpm]
+pnpm hardhat run scripts/depositBaseToken.ts
+```
+
+```bash [bun]
+bun hardhat run scripts/depositBaseToken.ts
+```
+
+::
+
+And that's it! You are now running a local ZKsync Chain that uses a custom ERC20 base token.
+You can follow the steps in the previous section to deploy a contract to the new chain.
+
+## Bridging ETH to your chain
+
+If your ERC20 token bridged to the L2 "acts" like ETH, then what happens if you bridge ETH to your custom chain?
+The answer is that if you try to bridge regular ETH to this chain, it will just use a different token contract address.
+
+Because ETH is no longer the base token, it has a different token address on L2 you will need to reference.
+To find the L2 token address for ETH, you can use the `l2TokenAddress` method available through `ethers`.
+
+To try this out, create a new script file to fetch the L2 ETH token address and deposit some ETH from the L1 to the L2 chain.
+
+:test-action{actionId="create-ETH-deposit-script"}
+
+```bash
+touch scripts/depositETH.ts
+```
+
+Next, copy and paste the script below into the `depositETH.ts` file:
+
+:test-action{actionId="ETH-deposit-script-code"}
+
+```ts [depositETH.ts]
+:code-import{filePath="custom-zk-chain/scripts/depositETH.ts"}
+```
+
+Run the script with the `hardhat run` command:
+
+:test-action{actionId="run-ETH-deposit"}
+
+::code-group
+
+```bash [npm]
+npx hardhat run scripts/depositETH.ts
+```
+
+```bash [yarn]
+yarn hardhat run scripts/depositETH.ts
+```
+
+```bash [pnpm]
+pnpm hardhat run scripts/depositETH.ts
+```
+
+```bash [bun]
+bun hardhat run scripts/depositETH.ts
+```
+
+::
+
+You should see L2 ETH address logged, and the ETH balance increase on the L2 chain.
+
+## Switching between chains and shutting down the ecosystem
+
+You can switch in between different chains without losing any state by terminating the chain server process and then running the command below:
+
+```bash
+zkstack ecosystem change-default-chain
+```
+
+Now when you start the server with `zkstack server`, the new default chain's node will start with the saved state.
+
+To fully shut down the ecosystem and erase all of the data and state,
+you can shut down the Docker containers from the ecosystem folder using the command:
+
+```bash
+docker-compose down
+```
+
+To restart the docker containers for your ecosystem and run your custom ZKsync Chain again, follow the steps below:
+
+1. In the ecosystem folder, run `zkstack containers`.
+1. Redeploy your ERC20 contract to the L1.
+1. Update the base token address in `<my_elastic_network>/chains/custom_zk_chain/configs/contracts.yaml` under `l1.base_token_addr` and in
+  `<my_elastic_network>/chains/custom_zk_chain/ZkStack.yaml` under `base_token.address`.
+1. Send ERC20 tokens to both of the ecosystem and chain governor addresses.
+1. Initialize the ecosystem with `zkstack ecosystem init --dev`.
+1. Start the chain server with `zkstack server`.
+1. Bridge ERC20 tokens from the L1 to L2.
+
+::twitter-button{text="I made a custom local @zkSyncDevs chain using zkstack CLI"}
