@@ -12,6 +12,7 @@ PID_DIR="$REPO_ROOT/.pids"
 # 默认链名称
 CHAIN_NAME="${CHAIN_NAME:-zkchain}"
 EXPLORER_COMPOSE_FILE="$REPO_ROOT/chains/$CHAIN_NAME/configs/explorer-docker-compose.yml"
+OBSERVABILITY_COMPOSE_FILE="$REPO_ROOT/era-observability/docker-compose.yml"
 
 # 确保 PID 目录存在
 mkdir -p "$PID_DIR"
@@ -260,6 +261,34 @@ clean_explorer_data() {
   log "Explorer 数据已清理，可重新启动相关服务"
 }
 
+start_observability() {
+  if [[ ! -f "$OBSERVABILITY_COMPOSE_FILE" ]]; then
+    log "未找到 $OBSERVABILITY_COMPOSE_FILE，跳过启动 observability"
+    return
+  fi
+  log "启动 Era Observability..."
+  "${DOCKER_COMPOSE_CMD[@]}" -f "$OBSERVABILITY_COMPOSE_FILE" up -d
+  log "Era Observability 已启动"
+}
+
+stop_observability() {
+  if [[ ! -f "$OBSERVABILITY_COMPOSE_FILE" ]]; then
+    return
+  fi
+  log "停止 Era Observability..."
+  "${DOCKER_COMPOSE_CMD[@]}" -f "$OBSERVABILITY_COMPOSE_FILE" down
+  log "Era Observability 已停止"
+}
+
+observability_status() {
+  if [[ ! -f "$OBSERVABILITY_COMPOSE_FILE" ]]; then
+    log "Observability: 未配置 (缺少 era-observability/docker-compose.yml)"
+    return
+  fi
+  log "Observability 服务状态:"
+  "${DOCKER_COMPOSE_CMD[@]}" -f "$OBSERVABILITY_COMPOSE_FILE" ps
+}
+
 # 启动 Explorer 前端
 start_explorer() {
   if is_running "$EXPLORER_PID_FILE"; then
@@ -314,6 +343,7 @@ start_all() {
   start_explorer_backend
   sleep 3  # 等待后端服务启动
   start_explorer
+  start_observability
   log "========== 所有服务已启动 =========="
   status_all
 }
@@ -321,6 +351,7 @@ start_all() {
 # 停止所有服务
 stop_all() {
   log "========== 停止所有服务 =========="
+  stop_observability
   stop_explorer
   stop_explorer_backend
   stop_portal
@@ -367,6 +398,7 @@ status_all() {
   fi
   
   log "=============================="
+  observability_status
 }
 
 # 确保日志目录存在
@@ -396,6 +428,8 @@ show_usage() {
   stop-explorer-backend  停止 Explorer 后端
   start-explorer         启动 Explorer 前端
   stop-explorer          停止 Explorer 前端
+  start-observability    启动监控 (era-observability)
+  stop-observability     停止监控
 
 服务说明:
   - L2 服务器: zkstack server --chain <chain_name>
@@ -482,6 +516,12 @@ case "$CMD" in
     ;;
   stop-explorer)
     stop_explorer
+    ;;
+  start-observability)
+    start_observability
+    ;;
+  stop-observability)
+    stop_observability
     ;;
   clean)
     clean_explorer_data
