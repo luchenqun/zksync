@@ -10,3 +10,11 @@ chains/zkchain/configs/secrets.yaml
 configs/contracts.yaml
 configs/erc20.yaml
 era-observability/
+artifacts/
+db/
+
+# 服务管理相关
+.pids/
+logs/
+*.log
+configs/.generated

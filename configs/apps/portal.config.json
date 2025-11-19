@@ -7,9 +7,10 @@
         "key": "zkchain",
         "name": "zkchain",
         "rpcUrl": "http://127.0.0.1:3050/",
+        "hidden": false,
         "l1Network": {
           "id": 9,
-          "name": "l1-chain",
+          "name": "l1chain",
           "network": "localhost",
           "nativeCurrency": {
             "name": "Ether",
