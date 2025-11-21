@@ -6,10 +6,12 @@ chains/zkchain/configs/contracts.yaml
 chains/zkchain/configs/external_node.yaml
 chains/zkchain/configs/general.yaml
 chains/zkchain/configs/genesis.yaml
+chains/zkchain/configs/secrets.yaml
 chains/custom_zkchain/configs/contracts.yaml
 chains/custom_zkchain/configs/external_node.yaml
 chains/custom_zkchain/configs/general.yaml
 chains/custom_zkchain/configs/genesis.yaml
+chains/custom_zkchain/configs/secrets.yaml
 configs/contracts.yaml
 configs/erc20.yaml
 era-observability/
