@@ -104,11 +104,11 @@ stop_l2() {
 }
 
 stop_stack() {
-  log '停止 docker-compose 服务'
-  compose down
-
   log '停止 Blockscout 服务'
   "$BLOCKSCOUT_SCRIPT" stop
+
+  log '停止 docker-compose 服务'
+  compose down
 
   log '停止 L2 服务'
   stop_l2
