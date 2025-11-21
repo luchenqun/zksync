@@ -43,41 +43,66 @@ cp .env.example .env
 - `WALLET_PRIVATE_KEY`: 钱包私钥
 - `TOKEN_ADDRESS`: Gas Token 合约地址（部署后填入）
 
-### 3. 启动完整环境
+### 3. 初始化 zksync-era 仓库（可选）
 
-#### 方式一：分步启动
+如果需要本地 zksync-era 源码：
 
 ```bash
-# 重置并初始化 L1 + 生态系统
-./scripts/l1.sh reset-init
+# 克隆 zksync-era 仓库到上一级目录
+npm run init
 
-# 启动 L2 服务（选择链）
+# 或者克隆并替换 genesis 配置
+npm run init --replace-hashes
+```
+
+**说明**：此步骤会在上一级目录克隆 zksync-era 仓库。如果不需要修改源码，可以跳过此步骤。
+
+### 4. 启动完整环境
+
+#### 方式一：一键重置并初始化（推荐）
+
+```bash
+# 重置并初始化完整环境（zkchain + custom_zkchain + Blockscout + 启动 zkchain）
+npm run reset --init=zkchain,custom_zkchain --scan --start-l2=zkchain
+
+# 或者只初始化 zkchain
+npm run reset --init=zkchain
+
+# 或者初始化并启动 custom_zkchain
+npm run reset --init=zkchain,custom_zkchain --start-l2=custom_zkchain
+
+# 或者只重置 L1（不初始化任何链）
+npm run reset
+```
+
+#### 方式二：分步启动
+
+```bash
+# 1. 重置并初始化 L1 + 生态系统 + custom_zkchain
+./scripts/l1.sh reset --init=zkchain,custom_zkchain --scan
+
+# 2. 启动 L2 服务（如果没有使用 --chain 参数自动启动）
 ./scripts/l2.sh --chain zkchain start          # ETH 作为 Gas Token
 ./scripts/l2.sh --chain custom_zkchain start   # 自定义 ERC20 作为 Gas Token
 ```
 
-#### 方式二：使用 npm 命令（推荐）
+#### 方式三：使用 npm 命令管理服务
 
 ```bash
 # 启动 L1 和 zkchain
 npm run start --chain=zkchain
 
 # 启动 L1、Blockscout 和 zkchain（完整环境）
-npm run start --chain=zkchain --blockscout=true
-
-# 或者启动 L1 和 custom_zkchain（需要先部署 Gas Token）
-npm run deploy:gas-token
-./scripts/l2.sh init-custom-zkchain
-npm run start --chain=custom_zkchain
+npm run start --chain=zkchain --scan
 
 # 停止所有服务
 npm run stop
 
 # 重启服务
-npm run restart --chain=zkchain --blockscout=true
+npm run restart --chain=zkchain --scan
 ```
 
-#### 方式三：直接使用脚本
+#### 方式四：直接使用脚本
 
 ```bash
 # 启动 L1 和 zkchain
@@ -89,8 +114,9 @@ npm run restart --chain=zkchain --blockscout=true
 
 **说明**：
 - 使用 `--chain` 参数可以在启动 L1 后自动启动指定的 L2 链
-- npm 命令使用 `--blockscout=true` 启动 Blockscout，脚本使用 `--scan`
+- npm 命令支持 `--scan` 启动 Blockscout（也兼容 `--blockscout=true`）
 - Blockscout 用于查看 L1 的区块和交易信息
+- `--init` 参数支持多个链，用逗号分隔：`zkchain,custom_zkchain`
 
 ## 🔵 L1 操作
 
@@ -99,20 +125,24 @@ L1 脚本管理本地以太坊节点（Reth）、PostgreSQL。Blockscout 区块�
 ### NPM 命令
 
 ```bash
-npm run start [--chain=<链名称>] [--blockscout=true]
+npm run start [--chain=<链名称>] [--scan]
 npm run stop
-npm run restart [--chain=<链名称>] [--blockscout=true]
+npm run restart [--chain=<链名称>] [--scan]
+npm run reset [--init=<链列表>] [--scan] [--start-l2=<链名称>]
 ```
 
-| 命令              | 说明         |
-| ----------------- | ------------ |
-| `npm run start`   | 启动 L1 服务 |
-| `npm run stop`    | 停止所有服务 |
-| `npm run restart` | 重启所有服务 |
+| 命令              | 说明                      |
+| ----------------- | ------------------------- |
+| `npm run start`   | 启动 L1 服务              |
+| `npm run stop`    | 停止所有服务              |
+| `npm run restart` | 重启所有服务              |
+| `npm run reset`   | 重置 L1（删除数据并重启） |
 
 **NPM 参数**：
-- `--chain=<链名称>`: 启动 L1 后自动启动指定的 L2 链
-- `--blockscout=true`: 启动 Blockscout 区块浏览器
+- `--chain=<链名称>`: 启动 L1 后自动启动指定的 L2 链（用于 start/restart）
+- `--scan`: 启动 Blockscout 区块浏览器（也支持 `--blockscout=true`）
+- `--init=<链列表>`: 初始化指定的链（用逗号分隔），支持：`zkchain`、`custom_zkchain`
+- `--start-l2=<链名称>`: 在 reset 后自动启动指定的 L2 链
 
 ### 脚本命令
 
@@ -122,17 +152,22 @@ npm run restart [--chain=<链名称>] [--blockscout=true]
 
 **选项**：
 - `--scan`: 启动 Blockscout 区块浏览器
-- `--chain <链名称>`: 启动 L1 后自动启动指定的 L2 链
+- `--chain <链名称>`: 启动 L1 后自动启动指定的 L2 链（用于 start/restart）
+- `--init <链列表>`: 在 reset 命令后初始化指定的链（用逗号分隔）
+  - 支持的链：`zkchain`, `custom_zkchain`
+  - `zkchain`: 初始化生态系统并部署 gas token
+  - `custom_zkchain`: 初始化 custom_zkchain
+- `--start-l2 <链名称>`: 在 reset 命令后自动启动指定的 L2 链
+  - 支持的链：`zkchain`, `custom_zkchain`
 
-| 命令         | 说明                                           |
-| ------------ | ---------------------------------------------- |
-| `start`      | 启动 L1 服务（Reth + Postgres）                |
-| `stop`       | 停止所有 L1 服务（包括 Blockscout 和 L2）      |
-| `restart`    | 重启所有服务（stop -> start）                  |
-| `reset`      | 重置 L1（删除数据卷并重启）                    |
-| `reset-init` | 重置并初始化生态系统（zkstack ecosystem init） |
-| `status`     | 查看 L1 服务状态                               |
-| `init`       | 初始化生态系统（不重置）                       |
+| 命令      | 说明                                      |
+| --------- | ----------------------------------------- |
+| `start`   | 启动 L1 服务（Reth + Postgres）           |
+| `stop`    | 停止所有 L1 服务（包括 Blockscout 和 L2） |
+| `restart` | 重启所有服务（stop -> start）             |
+| `reset`   | 重置 L1（删除数据卷并重启）               |
+| `status`  | 查看 L1 服务状态                          |
+| `init`    | 初始化生态系统（不重置）                  |
 
 ### 示例
 
@@ -143,10 +178,25 @@ npm run restart [--chain=<链名称>] [--blockscout=true]
 npm run start --chain=zkchain
 
 # 启动 L1、Blockscout 和 zkchain
-npm run start --chain=zkchain --blockscout=true
+npm run start --chain=zkchain --scan
 
 # 重启服务
-npm run restart --chain=custom_zkchain --blockscout=true
+npm run restart --chain=custom_zkchain --scan
+
+# 重置并初始化 zkchain
+npm run reset --init=zkchain
+
+# 重置并初始化两条链
+npm run reset --init=zkchain,custom_zkchain --scan
+
+# 重置、初始化并自动启动 zkchain
+npm run reset --init=zkchain --start-l2=zkchain --scan
+
+# 完整流程：重置、初始化两条链、启动 custom_zkchain 和 Blockscout
+npm run reset --init=zkchain,custom_zkchain --start-l2=custom_zkchain --scan
+
+# 只重置 L1（不初始化）
+npm run reset
 
 # 停止所有服务
 npm run stop
@@ -170,8 +220,23 @@ npm run stop
 # 重启 L1、Blockscout 和 zkchain
 ./scripts/l1.sh restart --scan --chain zkchain
 
-# 重置并初始化 L1，然后启动 zkchain
-./scripts/l1.sh reset-init --chain zkchain
+# 重置 L1（不初始化）
+./scripts/l1.sh reset
+
+# 重置并初始化 zkchain
+./scripts/l1.sh reset --init=zkchain
+
+# 重置并初始化 custom_zkchain
+./scripts/l1.sh reset --init=custom_zkchain
+
+# 重置并初始化两条链
+./scripts/l1.sh reset --init=zkchain,custom_zkchain --scan
+
+# 重置、初始化并自动启动 zkchain
+./scripts/l1.sh reset --init=zkchain --start-l2=zkchain --scan
+
+# 完整流程：重置、初始化两条链、启动 custom_zkchain 和 Blockscout
+./scripts/l1.sh reset --init=zkchain,custom_zkchain --start-l2=custom_zkchain --scan
 
 # 停止所有服务（包括 L2 和 Blockscout）
 ./scripts/l1.sh stop
@@ -183,16 +248,33 @@ npm run stop
 ### 注意事项
 
 - **Blockscout 默认不启动**：需要添加 `--scan` 参数才会启动 Blockscout 区块浏览器
-- **L2 链自动启动**：使用 `--chain` 参数可以在启动 L1 后自动启动指定的 L2 链
+- **L2 链自动启动**：
+  - `--chain` 参数：用于 `start`/`restart` 命令，在启动 L1 后自动启动指定的 L2 链
+  - `--start-l2` 参数：用于 `reset` 命令，在重置和初始化完成后自动启动指定的 L2 链
 - **stop 始终停止 L2 和 Blockscout**：`stop` 命令会停止所有运行中的 L2 服务和 Blockscout
 - **restart 支持参数传递**：`restart` 命令会先停止所有服务，然后根据 `--scan` 和 `--chain` 参数重新启动相应服务
-- `reset` 命令会：
+- **reset 命令流程**：
   1. 自动检测并停止运行中的 L2 服务
   2. 停止 Blockscout（如果运行中）
   3. 停止并删除 L1 数据卷（postgres-data、reth-data）
   4. 重新启动 L1 服务
-  5. 如果有 `--scan` 参数，会重置并启动 Blockscout
-  6. 如果有 `--chain` 参数，会自动启动指定的 L2 链
+  5. 如果有 `--scan` 参数，会重置并启动 Blockscout；否则移除 Blockscout
+  6. 如果有 `--init` 参数，会按顺序初始化指定的链：
+     - `zkchain`: 执行 ecosystem init + 部署 gas token
+     - `custom_zkchain`: 初始化 custom_zkchain
+  7. 如果有 `--start-l2` 参数，会自动启动指定的 L2 链
+- **--init 参数说明**：
+  - 只在 `reset` 命令中有效
+  - 支持多个链，用逗号分隔：`--init=zkchain,custom_zkchain`
+  - 两种写法等价：`--init=zkchain` 或 `--init zkchain`
+- **--start-l2 参数说明**：
+  - 只在 `reset` 命令中有效
+  - 只能指定一条链：`zkchain` 或 `custom_zkchain`
+  - 两种写法等价：`--start-l2=zkchain` 或 `--start-l2 zkchain`
+  - 建议先用 `--init` 初始化链，再用 `--start-l2` 启动
+- **私钥**
+  - 0xf12e28c0eb1ef4ff90478f6805b68d63737b7f33abfa091601140805da450d93
+  - 0x8002cD98Cfb563492A6fB3E7C8243b7B9Ad4cc92
 
 ## 🟢 L2 操作
 
@@ -329,8 +411,8 @@ Blockscout **默认不启动**，需要在 L1 脚本中添加 `--scan` 参数：
 # 启动 L1 和 Blockscout
 ./scripts/l1.sh start --scan
 
-# 重置并启动 Blockscout
-./scripts/l1.sh reset-init --scan
+# 重置、初始化并启动 Blockscout
+./scripts/l1.sh reset --init=zkchain --scan
 ```
 
 ### 访问地址
@@ -419,7 +501,7 @@ cat logs/server.log
 ./scripts/l1.sh status
 
 # 重新初始化
-./scripts/l1.sh reset-init
+./scripts/l1.sh reset --init=zkchain
 ```
 
 ### 3. 跨链失败
@@ -479,6 +561,22 @@ lsof -i :8000   # Blockscout
 # 修改 docker-compose.yml 或 .env 中的端口配置
 ```
 
+### 7. 权限问题
+
+**问题**: 在初始化L2的时候报错没权限问题
+
+**解决**: 修改文件 zksync-era/contracts/l1-contracts/foundry.toml
+
+```bash
+{ access = "read-write", path = "./script-out/output-deploy-l1.toml" },
+{ access = "read-write", path = "./script-out/register-ctm-l1.toml" },
+{ access = "read-write", path = "./script-out/output-deploy-erc20.toml" },
+{ access = "read-write", path = "./script-out/output-register-zk-chain.toml" },
+{ access = "read-write", path = "./script-out/output-deploy-l2-contracts.toml" },
+{ access = "read-write", path = "./script-out/output-admin-functions.toml" },
+{ access = "read-write", path = "./script-out/output-deploy-paymaster.toml" },
+```
+
 ## 📝 日志文件
 
 所有日志保存在 `logs/` 目录：
@@ -491,13 +589,44 @@ lsof -i :8000   # Blockscout
 
 ## 🛠️ 其他 NPM 命令
 
-| 命令                       | 说明           |
-| -------------------------- | -------------- |
-| `npm run build`            | 编译合约       |
-| `npm run deploy:gas-token` | 部署 Gas Token |
-| `npm run bridge:gas-token` | 桥接 Gas Token |
-| `npm run bridge:eth`       | 桥接 ETH       |
-| `npm run bridge:erc20`     | 桥接 ERC20     |
+| 命令                       | 说明                                              |
+| -------------------------- | ------------------------------------------------- |
+| `npm run build`            | 编译合约                                          |
+| `npm run init`             | 初始化 zksync-era 仓库（支持 `--replace-hashes`） |
+| `npm run deploy:gas-token` | 部署 Gas Token                                    |
+| `npm run bridge:gas-token` | 桥接 Gas Token                                    |
+| `npm run bridge:eth`       | 桥接 ETH                                          |
+| `npm run bridge:erc20`     | 桥接 ERC20                                        |
+| `npm run reset`            | 重置 L1（支持 `--init` 和 `--scan` 参数）         |
+| `npm run start`            | 启动 L1（支持 `--chain` 和 `--scan` 参数）        |
+| `npm run stop`             | 停止所有服务                                      |
+| `npm run restart`          | 重启服务（支持 `--chain` 和 `--scan` 参数）       |
+| `npm run ignore-configs`   | Git 忽略配置文件的本地修改                        |
+| `npm run track-configs`    | Git 恢复跟踪配置文件                              |
+
+### npm run init 详细说明
+
+`npm run init` 命令用于初始化 zksync-era 仓库：
+
+```bash
+# 克隆 zksync-era 仓库（如果不存在）
+npm run init
+
+# 克隆并替换 genesis.yaml 中的哈希值
+npm run init --replace-hashes
+```
+
+**功能**：
+1. 检查上一级目录是否存在 `zksync-era` 仓库
+2. 如果不存在，克隆 `zksync-era` 仓库并初始化子模块
+3. 如果指定了 `--replace-hashes`，替换 `genesis.yaml` 中的特定哈希值
+
+**参数**：
+- `--replace-hashes`：执行哈希替换（可选）
+
+**使用场景**：
+- 首次搭建环境时，需要克隆 zksync-era 仓库
+- 需要修改 genesis 配置时
 
 ## 🔗 相关链接
 

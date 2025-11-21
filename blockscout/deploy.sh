@@ -45,6 +45,11 @@ reset)
     sleep 3
     echo "===== end ===="
     ;;
+remove)
+    echo "===== remove ===="
+    cd "$SCRIPT_DIR/services" && rm -rf blockscout-db-data logs redis-data stats-db-data && cd "$SCRIPT_DIR"
+    echo "===== end ===="
+    ;;
 *)
     echo "Usage: deploy.sh start | stop | reset"
     ;;

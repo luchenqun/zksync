@@ -10,9 +10,11 @@
     "bridge:erc20": "hardhat run scripts/bridgeERC20.ts",
     "ignore-configs": "git update-index --assume-unchanged configs/apps/explorer.config.json configs/apps/portal.config.json",
     "track-configs": "git update-index --no-assume-unchanged configs/apps/explorer.config.json configs/apps/portal.config.json",
+    "init": "./scripts/init.sh",
     "start": "./scripts/l1.sh start",
     "stop": "./scripts/l1.sh stop",
-    "restart": "./scripts/l1.sh restart"
+    "restart": "./scripts/l1.sh restart",
+    "reset": "./scripts/l1.sh reset"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-ethers": "^3.0.0",

@@ -87,6 +87,9 @@ process_file() {
 main() {
   local replace_hashes=false
 
+  # 从 npm_config 环境变量读取参数（支持 npm run init --replace-hashes）
+  [[ -n "${npm_config_replace_hashes:-}" ]] && replace_hashes=true
+
   # 解析参数
   while [[ $# -gt 0 ]]; do
     case $1 in
