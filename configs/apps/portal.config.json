@@ -76,7 +76,7 @@
           "address": "0x000000000000000000000000000000000000800A",
           "symbol": "GAS",
           "decimals": 18,
-          "l1Address": "0x8f7f38d5b5395b906198c54ab4f77b3b1b89dfbe",
+          "l1Address": "0xe510c4396d63a563f03f7d9ceeee667780df6e1a",
           "name": "Gas Token"
         }
       ]

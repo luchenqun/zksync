@@ -396,7 +396,7 @@ status_all() {
   fi
   
   log "=============================="
-  observability_status
+  # observability_status
 }
 
 # 确保日志目录存在

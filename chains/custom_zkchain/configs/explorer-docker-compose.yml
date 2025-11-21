@@ -34,7 +34,7 @@ services:
     ports:
       - 3102:3102
     environment:
-      DATABASE_URL: postgres://postgres:notsecurepassword@host.docker.internal:5432/zksync_explorer_localhost_custom_zk_chain
+      DATABASE_URL: postgres://postgres:notsecurepassword@host.docker.internal:5432/zksync_explorer_localhost_custom_zkchain
       PRIVIDIUM: 'false'
       PORT: '3102'
       LOG_LEVEL: verbose
