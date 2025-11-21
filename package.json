@@ -7,7 +7,9 @@
     "deploy:gas-token": "ts-node scripts/deployGasToken.ts",
     "bridge:gas-token": "ts-node scripts/bridgeGasToken.ts",
     "bridge:eth": "hardhat run scripts/bridgeETH.ts",
-    "bridge:erc20": "hardhat run scripts/bridgeERC20.ts"
+    "bridge:erc20": "hardhat run scripts/bridgeERC20.ts",
+    "ignore-configs": "git update-index --assume-unchanged configs/apps/explorer.config.json configs/apps/portal.config.json",
+    "track-configs": "git update-index --no-assume-unchanged configs/apps/explorer.config.json configs/apps/portal.config.json"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-ethers": "^3.0.0",
