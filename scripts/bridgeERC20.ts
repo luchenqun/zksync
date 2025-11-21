@@ -14,7 +14,7 @@ const L2_RPC_PRIMARY = process.env.L2_RPC || 'http://127.0.0.1:3050';
 const TOKEN_NAME = 'USD Coin';
 const now = new Date();
 const pad = (n: number) => n.toString().padStart(2, '0');
-const formattedDateTime = `${pad(now.getMonth() + 1)}${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+const formattedDateTime = `${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
 const TOKEN_SYMBOL = `USDC-${formattedDateTime}`;
 const DEPOSIT_AMOUNT = '100'; // L1 -> L2
 const WITHDRAW_AMOUNT = '10'; // L2 -> L1
