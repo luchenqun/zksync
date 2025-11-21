@@ -16,6 +16,12 @@ PID_DIR="$REPO_ROOT/.pids"
 L2_SCRIPT="$SCRIPT_DIR/l2.sh"
 BLOCKSCOUT_SCRIPT="$REPO_ROOT/blockscout/deploy.sh"
 
+# 是否启动 blockscout（默认不启动，需要 --scan 参数）
+ENABLE_BLOCKSCOUT=false
+
+# L2 链名称（如果指定，会自动启动对应的 L2 链）
+L2_CHAIN_NAME=""
+
 # 确保日志目录存在
 mkdir -p "$LOG_DIR"
 
@@ -118,8 +124,16 @@ start_stack() {
   log '启动 docker-compose 服务'
   compose up -d
 
-  log '启动 Blockscout 服务'
-  "$BLOCKSCOUT_SCRIPT" start
+  if [[ "$ENABLE_BLOCKSCOUT" == "true" ]]; then
+    log '启动 Blockscout 服务'
+    "$BLOCKSCOUT_SCRIPT" start
+  fi
+
+  # 如果指定了 L2 链名称，自动启动对应的 L2 链
+  if [[ -n "$L2_CHAIN_NAME" ]]; then
+    log "自动启动 L2 链: $L2_CHAIN_NAME"
+    "$L2_SCRIPT" --chain "$L2_CHAIN_NAME" start
+  fi
 }
 
 remove_volumes() {
@@ -145,8 +159,20 @@ reset_stack() {
   start_stack
 
   # 在 L1 启动后再重置 blockscout（此时 zksync_default 网络已存在）
-  log '重置 Blockscout 服务'
-  "$BLOCKSCOUT_SCRIPT" reset
+  # 只有启用了 --scan 参数才重新启动 Blockscout
+  if [[ "$ENABLE_BLOCKSCOUT" == "true" ]]; then
+    log '重置 Blockscout 服务'
+    "$BLOCKSCOUT_SCRIPT" reset
+  fi
+}
+
+restart_stack() {
+  log '========== 重启服务 =========='
+  stop_stack
+  log '等待 2 秒...'
+  sleep 2
+  start_stack
+  log '========== 重启完成 =========='
 }
 
 reset_and_init() {
@@ -175,25 +201,76 @@ init_ecosystem() {
 
 show_usage() {
   cat <<EOF
-用法: scripts/l1.sh [start|stop|reset|reset-init|status|init]
+用法: scripts/l1.sh [选项] [命令]
 
+选项:
+  --scan              启动 Blockscout 区块浏览器
+  --chain <链名称>    启动 L1 后自动启动指定的 L2 链
+
+命令:
   start       直接启动 docker-compose (docker-compose up -d)
   stop        停止所有服务 (docker-compose down)
+  restart     重启所有服务 (stop -> start)
   reset       stop -> 删除卷 -> start
   reset-init  reset -> 等待服务启动 -> init
   status      查看 docker-compose ps
   init        初始化生态系统 (zkstack ecosystem init --dev --verbose)
               日志保存到: logs/ecosystem-init.log
 
+示例:
+  ./scripts/l1.sh start                          # 启动 L1
+  ./scripts/l1.sh start --scan                   # 启动 L1 和 Blockscout
+  ./scripts/l1.sh start --chain zkchain          # 启动 L1 和 zkchain
+  ./scripts/l1.sh restart --scan --chain zkchain # 重启 L1、Blockscout 和 zkchain
+  ./scripts/l1.sh reset-init --chain zkchain     # 重置初始化 L1，然后启动 zkchain
+
 EOF
 }
 
-case "${1:-help}" in
+# 解析参数
+CMD=""
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --scan)
+      ENABLE_BLOCKSCOUT=true
+      shift
+      ;;
+    --chain)
+      if [[ -z "${2:-}" ]]; then
+        log "错误: --chain 需要指定链名称"
+        show_usage
+        exit 1
+      fi
+      L2_CHAIN_NAME="$2"
+      shift 2
+      ;;
+    start|stop|restart|reset|reset-init|status|init|help|--help|-h)
+      CMD="$1"
+      shift
+      ;;
+    *)
+      if [[ -z "$CMD" ]]; then
+        printf '未知参数: %s\n\n' "$1"
+        show_usage
+        exit 1
+      fi
+      shift
+      ;;
+  esac
+done
+
+# 如果没有命令，默认为 help
+CMD="${CMD:-help}"
+
+case "$CMD" in
   start)
     start_stack
     ;;
   stop)
     stop_stack
+    ;;
+  restart)
+    restart_stack
     ;;
   reset)
     reset_stack
@@ -211,7 +288,7 @@ case "${1:-help}" in
     show_usage
     ;;
   *)
-    printf '未知命令: %s\n\n' "${1:-}"
+    printf '未知命令: %s\n\n' "$CMD"
     show_usage
     exit 1
     ;;

@@ -44,35 +44,56 @@ cp .env.example .env
 
 ### 3. 启动完整环境
 
+#### 方式一：分步启动
+
 ```bash
 # 重置并初始化 L1 + 生态系统
 ./scripts/l1.sh reset-init
-
-# 部署 Gas Token（用于 custom_zkchain）
-npm run deploy:gas-token
-
-# 初始化 custom_zkchain
-./scripts/l2.sh init-custom-zkchain
 
 # 启动 L2 服务（选择链）
 ./scripts/l2.sh --chain zkchain start          # ETH 作为 Gas Token
 ./scripts/l2.sh --chain custom_zkchain start   # 自定义 ERC20 作为 Gas Token
 ```
 
+#### 方式二：一键启动（推荐）
+
+```bash
+# 启动 L1 和 zkchain
+./scripts/l1.sh start --chain zkchain
+
+# 或者启动 L1 和 custom_zkchain（需要先部署 Gas Token）
+npm run deploy:gas-token
+./scripts/l2.sh init-custom-zkchain
+./scripts/l1.sh start --chain custom_zkchain
+
+# 启动 L1、Blockscout 和 zkchain（完整环境）
+./scripts/l1.sh start --scan --chain zkchain
+```
+
+**说明**：
+- 使用 `--chain` 参数可以在启动 L1 后自动启动指定的 L2 链
+- L1 默认不启动 Blockscout 区块浏览器，如需启动请添加 `--scan` 参数
+- Blockscout 用于查看 L1 的区块和交易信息
+
 ## 🔵 L1 操作
 
-L1 脚本管理本地以太坊节点（Reth）、PostgreSQL 和 Blockscout。
+L1 脚本管理本地以太坊节点（Reth）、PostgreSQL。Blockscout 区块浏览器需要使用 `--scan` 参数启动。
 
 ### 基本命令
 
 ```bash
-./scripts/l1.sh <command>
+./scripts/l1.sh [选项] <command>
 ```
+
+**选项**：
+- `--scan`: 启动 Blockscout 区块浏览器
+- `--chain <链名称>`: 启动 L1 后自动启动指定的 L2 链
 
 | 命令 | 说明 |
 |------|------|
-| `start` | 启动 L1 服务（Reth + Postgres + Blockscout） |
-| `stop` | 停止所有 L1 服务 |
+| `start` | 启动 L1 服务（Reth + Postgres） |
+| `stop` | 停止所有 L1 服务（包括 Blockscout 和 L2） |
+| `restart` | 重启所有服务（stop -> start） |
 | `reset` | 重置 L1（删除数据卷并重启） |
 | `reset-init` | 重置并初始化生态系统（zkstack ecosystem init） |
 | `status` | 查看 L1 服务状态 |
@@ -84,23 +105,44 @@ L1 脚本管理本地以太坊节点（Reth）、PostgreSQL 和 Blockscout。
 # 启动 L1
 ./scripts/l1.sh start
 
+# 启动 L1 和 Blockscout
+./scripts/l1.sh start --scan
+
+# 启动 L1 和 zkchain（自动启动 L2）
+./scripts/l1.sh start --chain zkchain
+
+# 启动 L1 和 custom_zkchain（自动启动 L2）
+./scripts/l1.sh start --chain custom_zkchain
+
+# 启动 L1、Blockscout 和 zkchain（组合使用）
+./scripts/l1.sh start --scan --chain zkchain
+
+# 重启 L1、Blockscout 和 zkchain
+./scripts/l1.sh restart --scan --chain zkchain
+
+# 重置并初始化 L1，然后启动 zkchain
+./scripts/l1.sh reset-init --chain zkchain
+
+# 停止所有服务（包括 L2 和 Blockscout）
+./scripts/l1.sh stop
+
 # 查看状态
 ./scripts/l1.sh status
-
-# 完全重置（清除所有数据）
-./scripts/l1.sh reset
-
-# 重置并初始化生态系统
-./scripts/l1.sh reset-init
 ```
 
 ### 注意事项
 
+- **Blockscout 默认不启动**：需要添加 `--scan` 参数才会启动 Blockscout 区块浏览器
+- **L2 链自动启动**：使用 `--chain` 参数可以在启动 L1 后自动启动指定的 L2 链
+- **stop 始终停止 L2 和 Blockscout**：`stop` 命令会停止所有运行中的 L2 服务和 Blockscout
+- **restart 支持参数传递**：`restart` 命令会先停止所有服务，然后根据 `--scan` 和 `--chain` 参数重新启动相应服务
 - `reset` 命令会：
   1. 自动检测并停止运行中的 L2 服务
-  2. 停止并删除 L1 数据卷（postgres-data、reth-data）
-  3. 重置 Blockscout 数据
-  4. 重新启动所有服务
+  2. 停止 Blockscout（如果运行中）
+  3. 停止并删除 L1 数据卷（postgres-data、reth-data）
+  4. 重新启动 L1 服务
+  5. 如果有 `--scan` 参数，会重置并启动 Blockscout
+  6. 如果有 `--chain` 参数，会自动启动指定的 L2 链
 
 ## 🟢 L2 操作
 
@@ -229,6 +271,18 @@ npm run bridge:erc20
 
 Blockscout 是一个开源的区块链浏览器，用于查看 L1 交易和区块信息。
 
+### 启动方式
+
+Blockscout **默认不启动**，需要在 L1 脚本中添加 `--scan` 参数：
+
+```bash
+# 启动 L1 和 Blockscout
+./scripts/l1.sh start --scan
+
+# 重置并启动 Blockscout
+./scripts/l1.sh reset-init --scan
+```
+
 ### 访问地址
 
 - **前端**: http://127.0.0.1:8000
@@ -237,7 +291,7 @@ Blockscout 是一个开源的区块链浏览器，用于查看 L1 交易和区�
 
 ### 独立管理
 
-Blockscout 会随 L1 自动启动/停止，也可以独立管理：
+也可以独立管理 Blockscout（需要 L1 已启动）：
 
 ```bash
 cd blockscout

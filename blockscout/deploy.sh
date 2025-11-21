@@ -28,14 +28,12 @@ start)
     compose -f mud.yml down
     compose -f mud.yml up -d
     sleep 3
-    docker ps -a
     echo "===== end ===="
     ;;
 stop)
     echo "===== stop ===="
     compose -f mud.yml down
     sleep 3
-    docker ps -a
     echo "===== end ===="
     ;;
 reset)
@@ -45,7 +43,6 @@ reset)
     cd "$SCRIPT_DIR/services" && rm -rf blockscout-db-data logs redis-data stats-db-data && cd "$SCRIPT_DIR"
     compose -f mud.yml up -d
     sleep 3
-    docker ps -a
     echo "===== end ===="
     ;;
 *)
