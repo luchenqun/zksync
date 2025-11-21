@@ -109,8 +109,19 @@ async function main() {
 
   log(`Wallet address: ${wallet.address}`);
 
+  // 检测 L2 是否使用 ETH 作为 base token
+  log('\n检测 L2 配置...');
+  const baseTokenAddress = await l2Provider.getBaseTokenContractAddress();
+  const isETHBaseToken = baseTokenAddress.toLowerCase() === utils.ETH_ADDRESS_IN_CONTRACTS.toLowerCase();
+  log(`L2 Base Token: ${baseTokenAddress}`);
+  log(`使用 ETH 作为 gas: ${isETHBaseToken ? '是' : '否'}`);
+
+  if (!isETHBaseToken) {
+    log('ℹ️  此链使用自定义 base token 作为 gas\n');
+  }
+
   // === 第一步：部署 ERC20 代币到 L1 ===
-  log(`\n[1/6] 部署 ${TOKEN_NAME}, ${TOKEN_SYMBOL} 代币到 L1...`);
+  log('[1/6] 部署 ERC20 代币到 L1...');
   // 创建标准的 ethers.Wallet 用于 L1 部署
   const l1Wallet = new ethers.Wallet(PRIVATE_KEY, l1Provider);
   const tokenAddress = await deployERC20(l1Wallet, TOKEN_NAME, TOKEN_SYMBOL);
@@ -124,6 +135,26 @@ async function main() {
   const l1BalanceBefore = await l1TokenContract.balanceOf(wallet.address);
   log(`L1 ${TOKEN_SYMBOL} Balance: ${ethers.formatEther(l1BalanceBefore)}`);
 
+  // 如果使用自定义 base token，检查 L1 上的 base token 余额
+  if (!isETHBaseToken) {
+    const erc20ABI = ['function balanceOf(address) view returns (uint256)', 'function symbol() view returns (string)'];
+    const baseTokenContract = new ethers.Contract(baseTokenAddress, erc20ABI, l1Provider);
+    const baseTokenBalance = await baseTokenContract.balanceOf(wallet.address);
+    const baseTokenSymbol = await baseTokenContract.symbol();
+    log(`L1 ${baseTokenSymbol} Balance (gas token): ${ethers.formatEther(baseTokenBalance)}`);
+
+    if (baseTokenBalance === 0n) {
+      log('\n========================================');
+      log('⚠️  错误: L1 上没有 base token 余额');
+      log('========================================');
+      log(`您需要 ${baseTokenSymbol} 来支付 L2 的 gas 费用`);
+      log(`Base Token 地址: ${baseTokenAddress}`);
+      log('请先获取一些 base token 再进行存款');
+      log('========================================\n');
+      process.exit(1);
+    }
+  }
+
   // === 第三步：存款 L1 -> L2 ===
   log(`\n[3/6] 存款 ${DEPOSIT_AMOUNT} ${TOKEN_SYMBOL} 从 L1 到 L2...`);
   const depositAmount = ethers.parseEther(DEPOSIT_AMOUNT);
@@ -131,7 +162,8 @@ async function main() {
   const depositTx = await wallet.deposit({
     token: tokenAddress,
     amount: depositAmount,
-    approveERC20: true,
+    approveERC20: true, // 需要 approve ERC20 token
+    approveBaseERC20: !isETHBaseToken, // 如果不是 ETH，需要 approve base token 用于支付 gas
   });
 
   log(`存款交易哈希: ${depositTx.hash}`);
