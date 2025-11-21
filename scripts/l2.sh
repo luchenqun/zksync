@@ -399,6 +399,74 @@ status_all() {
   # observability_status
 }
 
+# 检查 TOKEN_ADDRESS 是否是有效的 ERC20 合约
+check_token_address() {
+  local env_file="$REPO_ROOT/.env"
+
+  if [[ ! -f "$env_file" ]]; then
+    log "错误: 找不到 .env 文件: $env_file"
+    exit 1
+  fi
+
+  # 读取 TOKEN_ADDRESS
+  local token_address=$(grep "^TOKEN_ADDRESS=" "$env_file" | cut -d '=' -f2 | tr -d '"' | tr -d "'" | xargs)
+
+  if [[ -z "$token_address" ]]; then
+    log "错误: .env 文件中未找到 TOKEN_ADDRESS"
+    exit 1
+  fi
+
+  log "检查 TOKEN_ADDRESS: $token_address"
+
+  # 读取 L1_RPC
+  local l1_rpc=$(grep "^L1_RPC=" "$env_file" | cut -d '=' -f2 | tr -d '"' | tr -d "'" | xargs)
+  if [[ -z "$l1_rpc" ]]; then
+    l1_rpc="http://127.0.0.1:8545"
+  fi
+
+  # 检查是否是合约（调用 totalSupply 方法）
+  # ERC20 的 totalSupply() 方法签名: 0x18160ddd
+  local result=$(curl -s -X POST "$l1_rpc" \
+    -H "Content-Type: application/json" \
+    -d "{\"jsonrpc\":\"2.0\",\"method\":\"eth_call\",\"params\":[{\"to\":\"$token_address\",\"data\":\"0x18160ddd\"},\"latest\"],\"id\":1}" | grep -o '"result":"[^"]*"' | cut -d '"' -f4)
+
+  if [[ -z "$result" ]] || [[ "$result" == "0x" ]] || [[ "$result" == "null" ]]; then
+    log ""
+    log "========================================"
+    log "⚠️  错误: TOKEN_ADDRESS 不是有效的 ERC20 合约"
+    log "========================================"
+    log "地址: $token_address"
+    log "该地址没有实现 ERC20 totalSupply() 方法"
+    log ""
+    log "请先部署 Gas Token:"
+    log "  npm run deploy:gas-token"
+    log "========================================"
+    exit 1
+  fi
+
+  log "✓ TOKEN_ADDRESS 检查通过，是有效的 ERC20 合约"
+}
+
+# 初始化 custom_zkchain
+init_custom_zkchain() {
+  log '========== 初始化 custom_zkchain =========='
+
+  # 检查 TOKEN_ADDRESS
+  check_token_address
+
+  cd "$REPO_ROOT"
+  zkstack chain init --chain custom_zkchain --dev --verbose 2>&1 | tee "$REPO_ROOT/logs/chain-init-custom_zkchain.log"
+  local exit_code=${PIPESTATUS[0]}
+  if [[ $exit_code -eq 0 ]]; then
+    log 'custom_zkchain 初始化完成'
+  else
+    log "错误: custom_zkchain 初始化失败 (退出码: $exit_code)"
+    log "请查看日志: $REPO_ROOT/logs/chain-init-custom_zkchain.log"
+    exit $exit_code
+  fi
+  log '========== 初始化完成 =========='
+}
+
 # 确保日志目录存在
 mkdir -p "$REPO_ROOT/logs"
 
@@ -416,7 +484,8 @@ show_usage() {
   restart     重启所有服务
   status      查看所有服务状态
   clean       清理 Explorer 数据（删除并重建 explorer 数据库）
-  
+  init-custom-zkchain  初始化 custom_zkchain 链
+
   或者单独控制:
   start-server           启动 L2 服务器
   stop-server            停止 L2 服务器
@@ -468,7 +537,7 @@ while [[ $# -gt 0 ]]; do
       CMD="help"
       shift
       ;;
-    start|stop|restart|status|start-server|stop-server|start-portal|stop-portal|start-explorer-backend|stop-explorer-backend|start-explorer|stop-explorer|start-observability|stop-observability|clean)
+    start|stop|restart|status|start-server|stop-server|start-portal|stop-portal|start-explorer-backend|stop-explorer-backend|start-explorer|stop-explorer|start-observability|stop-observability|clean|init-custom-zkchain)
       if [[ -z "$CMD" ]]; then
         CMD="$1"
       else
@@ -540,6 +609,9 @@ case "$CMD" in
     ;;
   clean)
     clean_explorer_data
+    ;;
+  init-custom-zkchain)
+    init_custom_zkchain
     ;;
   help|--help|-h)
     show_usage
