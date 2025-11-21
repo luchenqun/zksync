@@ -7,7 +7,6 @@
         "key": "zkchain",
         "name": "zkchain",
         "rpcUrl": "http://127.0.0.1:3050/",
-        "hidden": true,
         "l1Network": {
           "id": 9,
           "name": "Localhost",
@@ -19,10 +18,14 @@
           },
           "rpcUrls": {
             "default": {
-              "http": ["http://127.0.0.1:8545"]
+              "http": [
+                "http://127.0.0.1:8545"
+              ]
             },
             "public": {
-              "http": ["http://127.0.0.1:8545"]
+              "http": [
+                "http://127.0.0.1:8545"
+              ]
             }
           }
         }
@@ -55,10 +58,14 @@
           },
           "rpcUrls": {
             "default": {
-              "http": ["http://127.0.0.1:8545"]
+              "http": [
+                "http://127.0.0.1:8545"
+              ]
             },
             "public": {
-              "http": ["http://127.0.0.1:8545"]
+              "http": [
+                "http://127.0.0.1:8545"
+              ]
             }
           }
         }
