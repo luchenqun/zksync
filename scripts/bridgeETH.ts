@@ -6,7 +6,7 @@ dotenv.config();
 
 const PRIVATE_KEY = process.env.WALLET_PRIVATE_KEY || 'f78a036930ce63791ea6ea20072986d8c3f16a6811f6a2583b0787c45086f769';
 const L1_RPC = process.env.L1_RPC || 'http://127.0.0.1:8545';
-const L2_RPC = process.env.L2_RPC || 'http://127.0.0.1:3050';
+const L2_RPC_PRIMARY = process.env.L2_RPC || 'http://127.0.0.1:3050';
 
 // 配置参数
 const DEPOSIT_AMOUNT = process.env.DEPOSIT_AMOUNT || '20'; // L1 -> L2
@@ -24,9 +24,47 @@ async function sleep(seconds: number) {
   await new Promise((resolve) => setTimeout(resolve, seconds * 1000));
 }
 
+async function testRpcConnection(rpc: string): Promise<boolean> {
+  try {
+    // 创建一个带超时的 Provider，禁用自动重试
+    const provider = new Provider(rpc, undefined, {
+      staticNetwork: true,
+      batchMaxCount: 1,
+    });
+    await provider.getNetwork();
+    return true;
+  } catch (error) {
+    log(`测试 RPC 连接失败: ${rpc} ${error}`);
+    return false;
+  }
+}
+
+async function getWorkingL2Rpc(primaryRpc: string): Promise<string> {
+  log(`测试主 RPC: ${primaryRpc}`);
+  if (await testRpcConnection(primaryRpc)) {
+    log(`✓ 主 RPC 连接成功`);
+    return primaryRpc;
+  }
+
+  // 确定备用 RPC
+  const fallbackRpc = primaryRpc.includes(':3050') ? primaryRpc.replace(':3050', ':3150') : primaryRpc.replace(':3150', ':3050');
+
+  log(`⚠ 主 RPC 连接失败，尝试备用 RPC: ${fallbackRpc}`);
+  if (await testRpcConnection(fallbackRpc)) {
+    log(`✓ 备用 RPC 连接成功`);
+    return fallbackRpc;
+  }
+
+  throw new Error(`无法连接到 L2 RPC，已尝试: ${primaryRpc}, ${fallbackRpc}`);
+}
+
 async function main() {
   log('开始 L1 ↔ L2 ETH 跨链测试');
   log('========================================');
+
+  // 测试并获取可用的 L2 RPC
+  const L2_RPC = await getWorkingL2Rpc(L2_RPC_PRIMARY);
+
   log(`L1 RPC: ${L1_RPC}`);
   log(`L2 RPC: ${L2_RPC}`);
   log(`存款金额: ${DEPOSIT_AMOUNT} ETH`);
