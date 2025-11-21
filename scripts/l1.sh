@@ -109,6 +109,9 @@ stop_stack() {
 
   log '停止 Blockscout 服务'
   "$BLOCKSCOUT_SCRIPT" stop
+
+  log '停止 L2 服务'
+  stop_l2
 }
 
 start_stack() {
