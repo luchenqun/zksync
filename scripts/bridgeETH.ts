@@ -77,21 +77,75 @@ async function main() {
 
   log(`Wallet address: ${wallet.address}`);
 
+  // 检测 L2 是否使用 ETH 作为 base token
+  log('\n检测 L2 配置...');
+  const baseTokenAddress = await l2Provider.getBaseTokenContractAddress();
+  const isETHBaseToken = baseTokenAddress.toLowerCase() === utils.ETH_ADDRESS_IN_CONTRACTS.toLowerCase();
+  log(`L2 Base Token: ${baseTokenAddress}`);
+  log(`使用 ETH 作为 gas: ${isETHBaseToken ? '是' : '否'}`);
+
+  // 获取 ETH 在 L2 上的地址
+  const l2EthTokenAddress = await l2Provider.l2TokenAddress(utils.ETH_ADDRESS_IN_CONTRACTS);
+  if (!isETHBaseToken) {
+    log(`L2 上的 ETH token 地址: ${l2EthTokenAddress}`);
+    log('ℹ️  此链使用自定义 base token 作为 gas，ETH 将作为普通 ERC20 跨链\n');
+  }
+
   // === 第一步：检查初始余额 ===
-  log('\n[1/5] 检查初始余额...');
+  log('[1/5] 检查初始余额...');
   const l1BalanceBefore = await l1Provider.getBalance(wallet.address);
-  const l2BalanceBefore = await l2Provider.getBalance(wallet.address);
+
+  // 如果使用自定义 base token，检查 L1 上的 base token 余额
+  if (!isETHBaseToken) {
+    const erc20ABI = ['function balanceOf(address) view returns (uint256)', 'function symbol() view returns (string)'];
+    const baseTokenContract = new ethers.Contract(baseTokenAddress, erc20ABI, l1Provider);
+    const baseTokenBalance = await baseTokenContract.balanceOf(wallet.address);
+    const baseTokenSymbol = await baseTokenContract.symbol();
+    log(`L1 ${baseTokenSymbol} Balance (gas token): ${ethers.formatEther(baseTokenBalance)}`);
+
+    if (baseTokenBalance === 0n) {
+      log('\n========================================');
+      log('⚠️  错误: L1 上没有 base token 余额');
+      log('========================================');
+      log(`您需要 ${baseTokenSymbol} 来支付 L2 的 gas 费用`);
+      log(`Base Token 地址: ${baseTokenAddress}`);
+      log('请先获取一些 base token 再进行存款');
+      log('========================================\n');
+      process.exit(1);
+    }
+  }
+
+  // 查询 L2 上的 ETH 余额
+  let l2EthBalanceBefore = 0n;
+  if (isETHBaseToken) {
+    // ETH 是 base token，直接查余额
+    l2EthBalanceBefore = await l2Provider.getBalance(wallet.address);
+  } else {
+    // ETH 是普通 ERC20，查询 token 余额
+    try {
+      const erc20ABI = ['function balanceOf(address) view returns (uint256)'];
+      const l2EthContract = new ethers.Contract(l2EthTokenAddress, erc20ABI, l2Provider);
+      l2EthBalanceBefore = await l2EthContract.balanceOf(wallet.address);
+    } catch (error) {
+      // 如果查询失败（比如合约还未部署），默认为 0
+      log(`⚠️  无法查询 L2 ETH 余额，可能是首次存款，默认为 0`);
+      l2EthBalanceBefore = 0n;
+    }
+  }
+
   log(`L1 ETH Balance: ${ethers.formatEther(l1BalanceBefore)}`);
-  log(`L2 ETH Balance: ${ethers.formatEther(l2BalanceBefore)}`);
+  log(`L2 ETH Balance: ${ethers.formatEther(l2EthBalanceBefore)}`);
 
   // === 第二步：存款 L1 -> L2 ===
   log(`\n[2/5] 存款 ${DEPOSIT_AMOUNT} ETH 从 L1 到 L2...`);
   const depositAmount = ethers.parseEther(DEPOSIT_AMOUNT);
-  log(`token address: ${utils.ETH_ADDRESS_IN_CONTRACTS}`);
 
+  // 如果 L2 使用自定义 base token，需要 approve base token 用于支付 gas
   const depositTx = await wallet.deposit({
     token: utils.ETH_ADDRESS_IN_CONTRACTS,
     amount: depositAmount,
+    approveBaseERC20: !isETHBaseToken, // 如果不是 ETH，需要 approve base token
+    approveERC20: false, // ETH 不需要 approve
   });
 
   log(`存款交易哈希: ${depositTx.hash}`);
@@ -102,15 +156,27 @@ async function main() {
   await sleep(DEPOSIT_WAIT_SECONDS);
 
   // 检查存款后余额
-  const l2BalanceAfterDeposit = await l2Provider.getBalance(wallet.address);
-  log(`L2 存款后余额: ${ethers.formatEther(l2BalanceAfterDeposit)}`);
+  let l2EthBalanceAfterDeposit = 0n;
+  if (isETHBaseToken) {
+    l2EthBalanceAfterDeposit = await l2Provider.getBalance(wallet.address);
+  } else {
+    try {
+      const erc20ABI = ['function balanceOf(address) view returns (uint256)'];
+      const l2EthContract = new ethers.Contract(l2EthTokenAddress, erc20ABI, l2Provider);
+      l2EthBalanceAfterDeposit = await l2EthContract.balanceOf(wallet.address);
+    } catch (error) {
+      log(`⚠️  无法查询存款后余额`);
+      l2EthBalanceAfterDeposit = 0n;
+    }
+  }
+  log(`L2 存款后余额: ${ethers.formatEther(l2EthBalanceAfterDeposit)}`);
 
   // === 第三步：提现 L2 -> L1 ===
   log(`\n[3/5] 提现 ${WITHDRAW_AMOUNT} ETH 从 L2 到 L1...`);
   const withdrawAmount = ethers.parseEther(WITHDRAW_AMOUNT);
 
   const withdrawTx = await wallet.withdraw({
-    token: utils.ETH_ADDRESS_IN_CONTRACTS,
+    token: l2EthTokenAddress,
     amount: withdrawAmount,
   });
 
@@ -148,13 +214,27 @@ async function main() {
   log('\n========================================');
   log('最终余额:');
   const l1BalanceAfter = await l1Provider.getBalance(wallet.address);
-  const l2BalanceAfter = await l2Provider.getBalance(wallet.address);
+
+  let l2EthBalanceAfter = 0n;
+  if (isETHBaseToken) {
+    l2EthBalanceAfter = await l2Provider.getBalance(wallet.address);
+  } else {
+    try {
+      const erc20ABI = ['function balanceOf(address) view returns (uint256)'];
+      const l2EthContract = new ethers.Contract(l2EthTokenAddress, erc20ABI, l2Provider);
+      l2EthBalanceAfter = await l2EthContract.balanceOf(wallet.address);
+    } catch (error) {
+      log(`⚠️  无法查询最终余额`);
+      l2EthBalanceAfter = 0n;
+    }
+  }
+
   log(`L1 ETH Balance: ${ethers.formatEther(l1BalanceAfter)}`);
-  log(`L2 ETH Balance: ${ethers.formatEther(l2BalanceAfter)}`);
+  log(`L2 ETH Balance: ${ethers.formatEther(l2EthBalanceAfter)}`);
 
   log('\n余额变化:');
   log(`L1: ${ethers.formatEther(l1BalanceBefore)} -> ${ethers.formatEther(l1BalanceAfter)} (${ethers.formatEther(l1BalanceAfter - l1BalanceBefore)})`);
-  log(`L2: ${ethers.formatEther(l2BalanceBefore)} -> ${ethers.formatEther(l2BalanceAfter)} (${ethers.formatEther(l2BalanceAfter - l2BalanceBefore)})`);
+  log(`L2: ${ethers.formatEther(l2EthBalanceBefore)} -> ${ethers.formatEther(l2EthBalanceAfter)} (${ethers.formatEther(l2EthBalanceAfter - l2EthBalanceBefore)})`);
   log('========================================\n');
   log('✓ 跨链测试完成！');
 }
