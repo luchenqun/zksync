@@ -12,6 +12,7 @@
 - [Blockscout 浏览器](#blockscout-浏览器)
 - [项目结构](#项目结构)
 - [常见问题](#常见问题)
+- [其他 NPM 命令](#其他-npm-命令)
 
 ## 🔧 环境要求
 
@@ -55,16 +56,32 @@ cp .env.example .env
 ./scripts/l2.sh --chain custom_zkchain start   # 自定义 ERC20 作为 Gas Token
 ```
 
-#### 方式二：一键启动（推荐）
+#### 方式二：使用 npm 命令（推荐）
 
 ```bash
 # 启动 L1 和 zkchain
-./scripts/l1.sh start --chain zkchain
+npm run start --chain=zkchain
+
+# 启动 L1、Blockscout 和 zkchain（完整环境）
+npm run start --chain=zkchain --blockscout=true
 
 # 或者启动 L1 和 custom_zkchain（需要先部署 Gas Token）
 npm run deploy:gas-token
 ./scripts/l2.sh init-custom-zkchain
-./scripts/l1.sh start --chain custom_zkchain
+npm run start --chain=custom_zkchain
+
+# 停止所有服务
+npm run stop
+
+# 重启服务
+npm run restart --chain=zkchain --blockscout=true
+```
+
+#### 方式三：直接使用脚本
+
+```bash
+# 启动 L1 和 zkchain
+./scripts/l1.sh start --chain zkchain
 
 # 启动 L1、Blockscout 和 zkchain（完整环境）
 ./scripts/l1.sh start --scan --chain zkchain
@@ -72,14 +89,32 @@ npm run deploy:gas-token
 
 **说明**：
 - 使用 `--chain` 参数可以在启动 L1 后自动启动指定的 L2 链
-- L1 默认不启动 Blockscout 区块浏览器，如需启动请添加 `--scan` 参数
+- npm 命令使用 `--blockscout=true` 启动 Blockscout，脚本使用 `--scan`
 - Blockscout 用于查看 L1 的区块和交易信息
 
 ## 🔵 L1 操作
 
 L1 脚本管理本地以太坊节点（Reth）、PostgreSQL。Blockscout 区块浏览器需要使用 `--scan` 参数启动。
 
-### 基本命令
+### NPM 命令
+
+```bash
+npm run start [--chain=<链名称>] [--blockscout=true]
+npm run stop
+npm run restart [--chain=<链名称>] [--blockscout=true]
+```
+
+| 命令              | 说明         |
+| ----------------- | ------------ |
+| `npm run start`   | 启动 L1 服务 |
+| `npm run stop`    | 停止所有服务 |
+| `npm run restart` | 重启所有服务 |
+
+**NPM 参数**：
+- `--chain=<链名称>`: 启动 L1 后自动启动指定的 L2 链
+- `--blockscout=true`: 启动 Blockscout 区块浏览器
+
+### 脚本命令
 
 ```bash
 ./scripts/l1.sh [选项] <command>
@@ -89,17 +124,35 @@ L1 脚本管理本地以太坊节点（Reth）、PostgreSQL。Blockscout 区块�
 - `--scan`: 启动 Blockscout 区块浏览器
 - `--chain <链名称>`: 启动 L1 后自动启动指定的 L2 链
 
-| 命令 | 说明 |
-|------|------|
-| `start` | 启动 L1 服务（Reth + Postgres） |
-| `stop` | 停止所有 L1 服务（包括 Blockscout 和 L2） |
-| `restart` | 重启所有服务（stop -> start） |
-| `reset` | 重置 L1（删除数据卷并重启） |
+| 命令         | 说明                                           |
+| ------------ | ---------------------------------------------- |
+| `start`      | 启动 L1 服务（Reth + Postgres）                |
+| `stop`       | 停止所有 L1 服务（包括 Blockscout 和 L2）      |
+| `restart`    | 重启所有服务（stop -> start）                  |
+| `reset`      | 重置 L1（删除数据卷并重启）                    |
 | `reset-init` | 重置并初始化生态系统（zkstack ecosystem init） |
-| `status` | 查看 L1 服务状态 |
-| `init` | 初始化生态系统（不重置） |
+| `status`     | 查看 L1 服务状态                               |
+| `init`       | 初始化生态系统（不重置）                       |
 
 ### 示例
+
+#### NPM 命令示例
+
+```bash
+# 启动 L1 和 zkchain
+npm run start --chain=zkchain
+
+# 启动 L1、Blockscout 和 zkchain
+npm run start --chain=zkchain --blockscout=true
+
+# 重启服务
+npm run restart --chain=custom_zkchain --blockscout=true
+
+# 停止所有服务
+npm run stop
+```
+
+#### 脚本命令示例
 
 ```bash
 # 启动 L1
@@ -110,9 +163,6 @@ L1 脚本管理本地以太坊节点（Reth）、PostgreSQL。Blockscout 区块�
 
 # 启动 L1 和 zkchain（自动启动 L2）
 ./scripts/l1.sh start --chain zkchain
-
-# 启动 L1 和 custom_zkchain（自动启动 L2）
-./scripts/l1.sh start --chain custom_zkchain
 
 # 启动 L1、Blockscout 和 zkchain（组合使用）
 ./scripts/l1.sh start --scan --chain zkchain
@@ -172,27 +222,27 @@ L2 脚本管理 ZKsync 链节点、Portal 和 Explorer。
 ./scripts/l2.sh [--chain <链名称>] <command>
 ```
 
-| 命令 | 说明 |
-|------|------|
-| `start` | 启动所有 L2 服务（Server + Portal + Explorer） |
-| `stop` | 停止所有 L2 服务 |
-| `restart` | 重启所有 L2 服务 |
-| `status` | 查看服务状态 |
-| `clean` | 清理 Explorer 数据库 |
-| `init-custom-zkchain` | 初始化 custom_zkchain（需要先部署 Gas Token） |
+| 命令                  | 说明                                           |
+| --------------------- | ---------------------------------------------- |
+| `start`               | 启动所有 L2 服务（Server + Portal + Explorer） |
+| `stop`                | 停止所有 L2 服务                               |
+| `restart`             | 重启所有 L2 服务                               |
+| `status`              | 查看服务状态                                   |
+| `clean`               | 清理 Explorer 数据库                           |
+| `init-custom-zkchain` | 初始化 custom_zkchain（需要先部署 Gas Token）  |
 
 ### 单独服务控制
 
-| 命令 | 说明 |
-|------|------|
-| `start-server` | 启动 L2 服务器 |
-| `stop-server` | 停止 L2 服务器 |
-| `start-portal` | 启动 Portal 网页钱包 |
-| `stop-portal` | 停止 Portal |
-| `start-explorer-backend` | 启动 Explorer 后端 |
-| `stop-explorer-backend` | 停止 Explorer 后端 |
-| `start-explorer` | 启动 Explorer 前端 |
-| `stop-explorer` | 停止 Explorer 前端 |
+| 命令                     | 说明                 |
+| ------------------------ | -------------------- |
+| `start-server`           | 启动 L2 服务器       |
+| `stop-server`            | 停止 L2 服务器       |
+| `start-portal`           | 启动 Portal 网页钱包 |
+| `stop-portal`            | 停止 Portal          |
+| `start-explorer-backend` | 启动 Explorer 后端   |
+| `stop-explorer-backend`  | 停止 Explorer 后端   |
+| `start-explorer`         | 启动 Explorer 前端   |
+| `stop-explorer`          | 停止 Explorer 前端   |
 
 ### 示例
 
@@ -438,6 +488,16 @@ lsof -i :8000   # Blockscout
 - `logs/server.log`: L2 服务器日志
 - `logs/portal.log`: Portal 日志
 - `logs/explorer.log`: Explorer 前端日志
+
+## 🛠️ 其他 NPM 命令
+
+| 命令                       | 说明           |
+| -------------------------- | -------------- |
+| `npm run build`            | 编译合约       |
+| `npm run deploy:gas-token` | 部署 Gas Token |
+| `npm run bridge:gas-token` | 桥接 Gas Token |
+| `npm run bridge:eth`       | 桥接 ETH       |
+| `npm run bridge:erc20`     | 桥接 ERC20     |
 
 ## 🔗 相关链接
 

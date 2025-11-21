@@ -227,6 +227,10 @@ show_usage() {
 EOF
 }
 
+# 从 npm_config 环境变量读取参数（支持 npm run start --chain=zkchain --blockscout=true）
+[[ -n "${npm_config_chain:-}" ]] && L2_CHAIN_NAME="$npm_config_chain"
+[[ -n "${npm_config_blockscout:-}" ]] && ENABLE_BLOCKSCOUT=true
+
 # 解析参数
 CMD=""
 while [[ $# -gt 0 ]]; do
