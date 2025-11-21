@@ -7,6 +7,7 @@
         "key": "zkchain",
         "name": "zkchain",
         "rpcUrl": "http://127.0.0.1:3050/",
+        "hidden": false,
         "l1Network": {
           "id": 9,
           "name": "Localhost",
@@ -46,7 +47,7 @@
         "key": "custom_zkchain",
         "name": "custom_zkchain",
         "rpcUrl": "http://127.0.0.1:3150/",
-        "hidden": false,
+        "hidden": true,
         "l1Network": {
           "id": 9,
           "name": "Localhost",

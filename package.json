@@ -6,7 +6,7 @@
     "build": "npx hardhat compile",
     "deploy:token": "ts-node scripts/deployToken.ts",
     "bridge:base-token": "ts-node scripts/bridgeBaseToken.ts",
-    "bridge:eth": "hardhat run scripts/depositETH.ts"
+    "bridge:eth": "hardhat run scripts/bridgeETH.ts"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-ethers": "^3.0.0",
