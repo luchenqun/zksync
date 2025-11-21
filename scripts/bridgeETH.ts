@@ -87,6 +87,7 @@ async function main() {
   // === 第二步：存款 L1 -> L2 ===
   log(`\n[2/5] 存款 ${DEPOSIT_AMOUNT} ETH 从 L1 到 L2...`);
   const depositAmount = ethers.parseEther(DEPOSIT_AMOUNT);
+  log(`token address: ${utils.ETH_ADDRESS_IN_CONTRACTS}`);
 
   const depositTx = await wallet.deposit({
     token: utils.ETH_ADDRESS_IN_CONTRACTS,

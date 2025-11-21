@@ -79,6 +79,7 @@ async function main() {
   // === 第三步：提现 L2 -> L1 ===
   log(`\n[3/5] 提现 ${WITHDRAW_AMOUNT} tokens 从 L2 到 L1...`);
   const withdrawAmount = ethers.parseEther(WITHDRAW_AMOUNT);
+  log(`token address: ${utils.L2_BASE_TOKEN_ADDRESS}`);
 
   // 对于 base token，在 L2 上使用 ETH_ADDRESS 进行提现
   const withdrawTx = await wallet.withdraw({
