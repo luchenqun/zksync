@@ -1,4 +1,4 @@
-import { execSync } from 'child_process';
+import { ethers } from 'ethers';
 import fs from 'fs';
 import path from 'path';
 import dotenv from 'dotenv';
@@ -9,6 +9,11 @@ const PROJECT_ROOT = path.resolve(__dirname, '..');
 const ENV_FILE = path.join(PROJECT_ROOT, '.env');
 const DEPLOY_LOG = path.join(PROJECT_ROOT, 'logs', 'token-deploy.log');
 
+const PRIVATE_KEY = process.env.WALLET_PRIVATE_KEY || '0xf12e28c0eb1ef4ff90478f6805b68d63737b7f33abfa091601140805da450d93';
+const L1_RPC = process.env.L1_RPC || 'http://127.0.0.1:8545';
+const TOKEN_NAME = process.env.TOKEN_NAME || 'Gas Token';
+const TOKEN_SYMBOL = process.env.TOKEN_SYMBOL || 'Gas';
+
 function log(message: string) {
   const timestamp = new Date().toLocaleTimeString();
   console.log(`\x1b[32m[${timestamp}]\x1b[0m ${message}`);
@@ -17,6 +22,41 @@ function log(message: string) {
 function error(message: string) {
   const timestamp = new Date().toLocaleTimeString();
   console.error(`\x1b[31m[${timestamp}] ERROR:\x1b[0m ${message}`);
+}
+
+// 加载 CustomBaseToken artifact
+function loadCustomBaseTokenArtifact() {
+  const artifactPath = path.join(PROJECT_ROOT, 'artifacts/contracts/CustomBaseToken.sol/CustomBaseToken.json');
+  if (!fs.existsSync(artifactPath)) {
+    throw new Error(`合约 artifact 不存在: ${artifactPath}\n请先运行: npm run build`);
+  }
+  const artifactJson = fs.readFileSync(artifactPath, 'utf8');
+  return JSON.parse(artifactJson);
+}
+
+// 部署合约
+async function deployToken(wallet: ethers.Wallet, name: string, symbol: string): Promise<string> {
+  log(`部署 ${name} (${symbol}) 代币到 L1...`);
+
+  const artifact = loadCustomBaseTokenArtifact();
+  const factory = new ethers.ContractFactory(artifact.abi, artifact.bytecode, wallet);
+
+  log('发送部署交易...');
+  const contract = await factory.deploy(name, symbol);
+
+  log('等待部署确认...');
+  await contract.waitForDeployment();
+
+  const address = await contract.getAddress();
+
+  // 创建合约实例以调用方法
+  const tokenContract = new ethers.Contract(address, artifact.abi, wallet);
+  const totalSupply = await tokenContract.totalSupply();
+
+  log(`✓ 代币部署成功: ${address}`);
+  log(`总供应量: ${ethers.formatEther(totalSupply)} ${symbol}`);
+
+  return address;
 }
 
 function updateEnvFile(tokenAddress: string) {
@@ -156,6 +196,11 @@ function updateExplorerConfig(tokenAddress: string) {
 async function main() {
   try {
     log('开始部署 ERC20 Base Token...');
+    log('=========================================');
+    log(`L1 RPC: ${L1_RPC}`);
+    log(`代币名称: ${TOKEN_NAME}`);
+    log(`代币符号: ${TOKEN_SYMBOL}`);
+    log('=========================================\n');
 
     // 创建 logs 目录
     const logsDir = path.join(PROJECT_ROOT, 'logs');
@@ -163,60 +208,60 @@ async function main() {
       fs.mkdirSync(logsDir, { recursive: true });
     }
 
-    // 执行部署
-    log('执行 Hardhat Ignition 部署...');
-    const deployCommand = 'npx hardhat ignition deploy ./ignition/modules/CustomBaseToken.ts --network localRethNode --reset';
+    // 创建 provider 和 wallet
+    log('连接到 L1...');
+    const provider = new ethers.JsonRpcProvider(L1_RPC);
+    const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
 
-    try {
-      const output = execSync(deployCommand, {
-        cwd: PROJECT_ROOT,
-        encoding: 'utf8',
-        stdio: 'pipe',
-      });
+    const balance = await provider.getBalance(wallet.address);
+    log(`钱包地址: ${wallet.address}`);
+    log(`钱包余额: ${ethers.formatEther(balance)} ETH\n`);
 
-      // 保存日志
-      fs.writeFileSync(DEPLOY_LOG, output);
-      console.log(output);
-
-      // 从输出中提取 token address
-      const match = output.match(/CustomBaseToken#CustomBaseToken - (0x[0-9a-fA-F]{40})/);
-      if (!match || !match[1]) {
-        error('无法从部署输出中提取 token address');
-        console.log('\n部署输出:');
-        console.log(output);
-        process.exit(1);
-      }
-
-      const tokenAddress = match[1];
-      log(`\n✓ Token 部署成功: ${tokenAddress}`);
-
-      // 更新配置文件
-      log('\n开始更新配置文件...');
-      updateEnvFile(tokenAddress);
-      updateZkStackYaml(tokenAddress);
-      updateContractsYaml(tokenAddress);
-      updatePortalConfig(tokenAddress);
-      updateExplorerConfig(tokenAddress);
-
-      log('\n=========================================');
-      log('部署完成！');
-      log('=========================================');
-      log(`Token Address: ${tokenAddress}`);
-      log('已自动更新以下文件:');
-      log('  - .env');
-      log('  - chains/custom_zkchain/ZkStack.yaml');
-      log('  - chains/custom_zkchain/configs/contracts.yaml');
-      log('  - configs/apps/portal.config.json');
-      log('  - configs/apps/explorer.config.json');
-      log('=========================================\n');
-    } catch (err: any) {
-      error('部署失败');
-      console.error(err.stdout || err.message);
-      fs.writeFileSync(DEPLOY_LOG, err.stdout || err.message);
+    if (balance === 0n) {
+      error('钱包余额不足，无法部署合约');
       process.exit(1);
     }
+
+    // 执行部署
+    const tokenAddress = await deployToken(wallet, TOKEN_NAME, TOKEN_SYMBOL);
+
+    // 保存部署日志
+    const deployInfo = {
+      timestamp: new Date().toISOString(),
+      tokenAddress,
+      tokenName: TOKEN_NAME,
+      tokenSymbol: TOKEN_SYMBOL,
+      deployer: wallet.address,
+      l1Rpc: L1_RPC,
+    };
+    fs.writeFileSync(DEPLOY_LOG, JSON.stringify(deployInfo, null, 2));
+
+    // 更新配置文件
+    log('\n开始更新配置文件...');
+    updateEnvFile(tokenAddress);
+    updateZkStackYaml(tokenAddress);
+    updateContractsYaml(tokenAddress);
+    updatePortalConfig(tokenAddress);
+    updateExplorerConfig(tokenAddress);
+
+    log('\n=========================================');
+    log('部署完成！');
+    log('=========================================');
+    log(`Token Address: ${tokenAddress}`);
+    log(`Token Name: ${TOKEN_NAME}`);
+    log(`Token Symbol: ${TOKEN_SYMBOL}`);
+    log('\n已自动更新以下文件:');
+    log('  - .env');
+    log('  - chains/custom_zkchain/ZkStack.yaml');
+    log('  - chains/custom_zkchain/configs/contracts.yaml');
+    log('  - configs/apps/portal.config.json');
+    log('  - configs/apps/explorer.config.json');
+    log('=========================================\n');
   } catch (err) {
     error(`发生错误: ${err}`);
+    if (err instanceof Error) {
+      console.error(err.stack);
+    }
     process.exit(1);
   }
 }

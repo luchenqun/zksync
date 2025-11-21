@@ -3,7 +3,7 @@ services:
     image: matterlabs/block-explorer-worker:v2.73.1
     platform: linux/amd64
     environment:
-      DATABASE_NAME: zksync_explorer_localhost_custom_zk_chain
+      DATABASE_NAME: zksync_explorer_localhost_custom_zkchain
       DATABASE_PORT: '5432'
       DATABASE_PASSWORD: notsecurepassword
       DATABASE_HOST: host.docker.internal

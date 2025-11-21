@@ -7,7 +7,7 @@
         "key": "zkchain",
         "name": "zkchain",
         "rpcUrl": "http://127.0.0.1:3050/",
-        "hidden": false,
+        "hidden": true,
         "l1Network": {
           "id": 9,
           "name": "Localhost",
@@ -47,7 +47,7 @@
         "key": "custom_zkchain",
         "name": "custom_zkchain",
         "rpcUrl": "http://127.0.0.1:3150/",
-        "hidden": true,
+        "hidden": false,
         "l1Network": {
           "id": 9,
           "name": "Localhost",
@@ -74,10 +74,10 @@
       "tokens": [
         {
           "address": "0x000000000000000000000000000000000000800A",
-          "symbol": "ZKBT",
+          "symbol": "GAS",
           "decimals": 18,
-          "l1Address": "0xe510c4396d63a563f03f7d9ceeee667780df6e1a",
-          "name": "ZK Base Token"
+          "l1Address": "0x8f7f38d5b5395b906198c54ab4f77b3b1b89dfbe",
+          "name": "Gas Token"
         }
       ]
     }

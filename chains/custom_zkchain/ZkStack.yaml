@@ -10,7 +10,7 @@ external_node_config_path: null
 artifacts_path: /Users/lcq/Code/zk/zksync/chains/custom_zkchain/artifacts/
 l1_batch_commit_data_generator_mode: Rollup
 base_token:
-  address: 0xe510c4396d63a563f03f7d9ceeee667780df6e1a
+  address: 0x8F7F38d5B5395B906198c54Ab4f77b3B1b89DFBe
   nominator: 10
   denominator: 1
 wallet_creation: Localhost

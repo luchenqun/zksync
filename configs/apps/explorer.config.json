@@ -12,7 +12,7 @@
         "hostnames": [],
         "icon": "/images/icons/zksync-arrows.svg",
         "maintenance": false,
-        "published": true,
+        "published": false,
         "verificationApiUrl": "http://127.0.0.1:3070",
         "prividium": false
       },
@@ -22,11 +22,11 @@
         "l2ChainId": 272,
         "rpcUrl": "http://127.0.0.1:3150/",
         "apiUrl": "http://127.0.0.1:3102",
-        "baseTokenAddress": "0x000000000000000000000000000000000000800A",
+        "baseTokenAddress": "0x8F7F38d5B5395B906198c54Ab4f77b3B1b89DFBe",
         "hostnames": [],
         "icon": "/images/icons/zksync-arrows.svg",
         "maintenance": false,
-        "published": false,
+        "published": true,
         "verificationApiUrl": "http://127.0.0.1:3170",
         "prividium": false
       }
