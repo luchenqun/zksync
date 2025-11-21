@@ -1,0 +1,11 @@
+version: '3.9'
+
+services:
+  frontend:
+    image: ghcr.io/blockscout/frontend:v1.38.1
+    pull_policy: if_not_present
+    platform: linux/amd64
+    restart: always
+    container_name: 'frontend'
+    env_file:
+      - ../envs/mud-common-frontend.env

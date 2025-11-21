@@ -1,0 +1,5 @@
+services/blockscout-db-data/
+services/redis-data/
+services/stats-db-data/
+services/logs/
+services/dets/

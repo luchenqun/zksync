@@ -1,0 +1,18 @@
+version: '3.9'
+
+services:
+  backend:
+    image: blockscout/blockscout@sha256:909089adf4b0d290cd8e1213e889fc123f475d64a7b56b25a335b9ede901e74f
+    pull_policy: if_not_present
+    restart: always
+    stop_grace_period: 5m
+    container_name: 'backend'
+    command: sh -c "bin/blockscout eval \"Elixir.Explorer.ReleaseTasks.create_and_migrate()\" && bin/blockscout start"
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    env_file:
+      - ../envs/common-blockscout.env
+    volumes:
+      - ./logs/:/app/logs/
+      - ./precompiles.json:/app/precompiles.json
+      - ./chain.json:/app/chain.json
